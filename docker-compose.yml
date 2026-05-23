@@ -1,0 +1,27 @@
+services:
+  vkr-frontend:
+    container_name: vkr-frontend
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+    command: >
+      sh -c "if [ ! -d node_modules/.bin ]; then cp -a /opt/node_modules/. node_modules/; fi && npm run dev"
+    restart: unless-stopped
+    networks:
+      - vkr-inner-network
+
+volumes:
+  frontend_node_modules:
+    name: "vkr-volume-frontend-node-modules"
+
+networks:
+  vkr-inner-network:
+    name: vkr-scinside-internal
+    external: true
