@@ -12,7 +12,7 @@ services:
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: "true"
     command: >
-      sh -c "if [ ! -d node_modules/.bin ]; then cp -a /opt/node_modules/. node_modules/; fi && npm run dev"
+      sh -c "if [ ! -d node_modules/.bin ]; then cp -a /opt/node_modules/. node_modules/; fi && npm install && npm run dev"
     restart: unless-stopped
     networks:
       - vkr-inner-network

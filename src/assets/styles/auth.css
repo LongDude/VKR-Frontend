@@ -1,0 +1,68 @@
+.auth-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background: var(--sc-bg);
+  padding: 1rem;
+}
+
+.auth-panel {
+  width: min(100%, 430px);
+  border: 1px solid var(--sc-border);
+  border-radius: 0.5rem;
+  background: var(--sc-surface);
+  box-shadow: var(--sc-shadow);
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.auth-panel--wide {
+  width: min(100%, 620px);
+}
+
+.auth-brand {
+  margin-bottom: 2rem;
+}
+
+.auth-heading {
+  margin-bottom: 1.5rem;
+}
+
+.auth-heading h1 {
+  margin: 0;
+  color: var(--sc-text);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.auth-heading p {
+  margin: 0.5rem 0 0;
+  color: var(--sc-muted);
+  line-height: 1.55;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-submit {
+  min-height: 2.75rem;
+  margin-top: 0.25rem;
+  font-weight: 700;
+}
+
+.auth-switch {
+  margin: 1.25rem 0 0;
+  color: var(--sc-muted);
+  text-align: center;
+}
+
+.auth-switch a {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
