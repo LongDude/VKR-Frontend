@@ -1,0 +1,197 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+
+import FieldActivityCharts from '@/components/analytics/FieldActivityCharts.vue'
+import FieldAnalyticsFilters from '@/components/analytics/FieldAnalyticsFilters.vue'
+import FieldKpiCards from '@/components/analytics/FieldKpiCards.vue'
+import TopicMapChart from '@/components/analytics/TopicMapChart.vue'
+import TopicRankingTable from '@/components/analytics/TopicRankingTable.vue'
+import { fieldAnalyticsApi } from '@/services/fieldAnalyticsApi'
+import type { AnalyticsField, FieldAnalyticsQuery, FieldDashboardResponse } from '@/types/fieldAnalytics'
+
+const fields = ref<AnalyticsField[]>([])
+const fieldSearch = ref('')
+const dashboard = ref<FieldDashboardResponse | null>(null)
+const filters = ref<FieldAnalyticsQuery>({
+  fieldId: null,
+  periodStart: '',
+  periodEnd: '',
+  comparisonWindowMonths: 12,
+  movingAverageMonths: 3,
+})
+const isLoadingFields = ref(false)
+const isLoadingDashboard = ref(false)
+const errorMessage = ref<string | null>(null)
+
+let fieldSearchTimer: number | undefined
+let dashboardTimer: number | undefined
+let fieldsRequestId = 0
+let dashboardRequestId = 0
+let syncingAppliedFilters = false
+
+const selectedFieldName = computed(() => dashboard.value?.field.name ?? 'Field')
+const isLoading = computed(() => isLoadingFields.value || isLoadingDashboard.value)
+
+async function loadFields(): Promise<void> {
+  const requestId = ++fieldsRequestId
+  isLoadingFields.value = true
+
+  try {
+    const response = await fieldAnalyticsApi.listFields(fieldSearch.value, 50)
+    if (requestId !== fieldsRequestId) {
+      return
+    }
+
+    fields.value = response.fields
+    const hasSelectedField = response.fields.some((field) => field.id === filters.value.fieldId)
+    if (!hasSelectedField) {
+      filters.value = {
+        ...filters.value,
+        fieldId: response.fields[0]?.id ?? null,
+      }
+    }
+  } catch (error) {
+    if (requestId === fieldsRequestId) {
+      errorMessage.value = error instanceof Error ? error.message : 'Не удалось загрузить список Field.'
+    }
+  } finally {
+    if (requestId === fieldsRequestId) {
+      isLoadingFields.value = false
+    }
+  }
+}
+
+async function loadDashboard(): Promise<void> {
+  if (filters.value.fieldId === null) {
+    dashboard.value = null
+    return
+  }
+
+  const requestId = ++dashboardRequestId
+  isLoadingDashboard.value = true
+  errorMessage.value = null
+
+  try {
+    const response = await fieldAnalyticsApi.dashboard({
+      fieldId: filters.value.fieldId,
+      periodStart: filters.value.periodStart || undefined,
+      periodEnd: filters.value.periodEnd || undefined,
+      comparisonWindowMonths: filters.value.comparisonWindowMonths,
+      movingAverageMonths: filters.value.movingAverageMonths,
+    })
+    if (requestId !== dashboardRequestId) {
+      return
+    }
+
+    dashboard.value = response
+    syncAppliedFilters(response)
+  } catch (error) {
+    if (requestId === dashboardRequestId) {
+      errorMessage.value = error instanceof Error ? error.message : 'Не удалось загрузить аналитику Field.'
+      dashboard.value = null
+    }
+  } finally {
+    if (requestId === dashboardRequestId) {
+      isLoadingDashboard.value = false
+    }
+  }
+}
+
+function syncAppliedFilters(response: FieldDashboardResponse): void {
+  const applied = response.filters
+  if (
+    filters.value.periodStart === applied.periodStart &&
+    filters.value.periodEnd === applied.periodEnd &&
+    filters.value.comparisonWindowMonths === applied.comparisonWindowMonths &&
+    filters.value.movingAverageMonths === applied.movingAverageMonths
+  ) {
+    return
+  }
+
+  syncingAppliedFilters = true
+  filters.value = {
+    fieldId: response.field.id,
+    periodStart: applied.periodStart,
+    periodEnd: applied.periodEnd,
+    comparisonWindowMonths: applied.comparisonWindowMonths,
+    movingAverageMonths: applied.movingAverageMonths,
+  }
+  queueMicrotask(() => {
+    syncingAppliedFilters = false
+  })
+}
+
+function scheduleFieldsLoad(): void {
+  window.clearTimeout(fieldSearchTimer)
+  fieldSearchTimer = window.setTimeout(() => {
+    void loadFields()
+  }, 250)
+}
+
+function scheduleDashboardLoad(): void {
+  if (syncingAppliedFilters) {
+    return
+  }
+
+  window.clearTimeout(dashboardTimer)
+  dashboardTimer = window.setTimeout(() => {
+    void loadDashboard()
+  }, 250)
+}
+
+watch(fieldSearch, scheduleFieldsLoad)
+watch(filters, scheduleDashboardLoad, { deep: true })
+
+onMounted(() => {
+  void loadFields()
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(fieldSearchTimer)
+  window.clearTimeout(dashboardTimer)
+})
+</script>
+
+<template>
+  <section class="page-stack field-analytics-page">
+    <div class="page-heading">
+      <span class="section-eyebrow">Мониторинг направлений</span>
+      <h1>Аналитика публикаций по Field</h1>
+      <p>
+        Сводка активности, темпов роста и состояния Topic внутри выбранного Field на основе OpenAlex
+        monthly topic stats.
+      </p>
+    </div>
+
+    <FieldAnalyticsFilters
+      v-model:value="filters"
+      v-model:field-search="fieldSearch"
+      :fields="fields"
+      :loading="isLoading"
+      @refresh="loadDashboard"
+    />
+
+    <div v-if="errorMessage !== null" class="alert alert-danger analytics-alert" role="alert">
+      {{ errorMessage }}
+    </div>
+
+    <div v-if="isLoadingDashboard && dashboard === null" class="analytics-loading">
+      Загрузка аналитики...
+    </div>
+
+    <template v-if="dashboard !== null">
+      <FieldKpiCards :kpi="dashboard.kpi" />
+      <FieldActivityCharts
+        :field-name="selectedFieldName"
+        :field-activity="dashboard.fieldActivity"
+        :subfield-activity="dashboard.subfieldActivity"
+      />
+      <TopicMapChart :points="dashboard.topicMap.points" />
+      <TopicRankingTable :rankings="dashboard.rankings" />
+    </template>
+
+    <div v-else-if="!isLoading" class="analytics-empty analytics-empty--page">
+      Выберите Field из базы данных, чтобы построить страницу аналитики научных направлений.
+    </div>
+  </section>
+</template>

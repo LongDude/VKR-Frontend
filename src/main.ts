@@ -8,5 +8,6 @@ import router from './router'
 import './assets/styles/main.css'
 import './assets/styles/layout.css'
 import './assets/styles/auth.css'
+import './assets/styles/field-analytics.css'
 
 createApp(App).use(router).mount('#app')
