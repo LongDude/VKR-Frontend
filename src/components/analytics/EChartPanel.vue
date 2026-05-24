@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { BarChart, LineChart, ScatterChart } from 'echarts/charts'
+import { BarChart, LineChart, RadarChart, ScatterChart } from 'echarts/charts'
 import {
   GridComponent,
   LegendComponent,
+  RadarComponent,
   TitleComponent,
   TooltipComponent,
 } from 'echarts/components'
@@ -11,7 +12,18 @@ import type { ECharts, EChartsCoreOption } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-use([BarChart, LineChart, ScatterChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer])
+use([
+  BarChart,
+  LineChart,
+  RadarChart,
+  ScatterChart,
+  GridComponent,
+  LegendComponent,
+  RadarComponent,
+  TitleComponent,
+  TooltipComponent,
+  CanvasRenderer,
+])
 
 type EChartsOption = EChartsCoreOption
 
