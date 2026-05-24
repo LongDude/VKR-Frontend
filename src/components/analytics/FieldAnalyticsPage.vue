@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 import FieldActivityCharts from '@/components/analytics/FieldActivityCharts.vue'
 import FieldAnalyticsFilters from '@/components/analytics/FieldAnalyticsFilters.vue'
@@ -10,7 +10,6 @@ import { fieldAnalyticsApi } from '@/services/fieldAnalyticsApi'
 import type { AnalyticsField, FieldAnalyticsQuery, FieldDashboardResponse } from '@/types/fieldAnalytics'
 
 const fields = ref<AnalyticsField[]>([])
-const fieldSearch = ref('')
 const dashboard = ref<FieldDashboardResponse | null>(null)
 const filters = ref<FieldAnalyticsQuery>({
   fieldId: null,
@@ -23,11 +22,8 @@ const isLoadingFields = ref(false)
 const isLoadingDashboard = ref(false)
 const errorMessage = ref<string | null>(null)
 
-let fieldSearchTimer: number | undefined
-let dashboardTimer: number | undefined
 let fieldsRequestId = 0
 let dashboardRequestId = 0
-let syncingAppliedFilters = false
 
 const selectedFieldName = computed(() => dashboard.value?.field.name ?? 'Field')
 const isLoading = computed(() => isLoadingFields.value || isLoadingDashboard.value)
@@ -37,7 +33,7 @@ async function loadFields(): Promise<void> {
   isLoadingFields.value = true
 
   try {
-    const response = await fieldAnalyticsApi.listFields(fieldSearch.value, 50)
+    const response = await fieldAnalyticsApi.listFields(50)
     if (requestId !== fieldsRequestId) {
       return
     }
@@ -108,7 +104,6 @@ function syncAppliedFilters(response: FieldDashboardResponse): void {
     return
   }
 
-  syncingAppliedFilters = true
   filters.value = {
     fieldId: response.field.id,
     periodStart: applied.periodStart,
@@ -116,39 +111,10 @@ function syncAppliedFilters(response: FieldDashboardResponse): void {
     comparisonWindowMonths: applied.comparisonWindowMonths,
     movingAverageMonths: applied.movingAverageMonths,
   }
-  queueMicrotask(() => {
-    syncingAppliedFilters = false
-  })
 }
-
-function scheduleFieldsLoad(): void {
-  window.clearTimeout(fieldSearchTimer)
-  fieldSearchTimer = window.setTimeout(() => {
-    void loadFields()
-  }, 250)
-}
-
-function scheduleDashboardLoad(): void {
-  if (syncingAppliedFilters) {
-    return
-  }
-
-  window.clearTimeout(dashboardTimer)
-  dashboardTimer = window.setTimeout(() => {
-    void loadDashboard()
-  }, 250)
-}
-
-watch(fieldSearch, scheduleFieldsLoad)
-watch(filters, scheduleDashboardLoad, { deep: true })
 
 onMounted(() => {
   void loadFields()
-})
-
-onBeforeUnmount(() => {
-  window.clearTimeout(fieldSearchTimer)
-  window.clearTimeout(dashboardTimer)
 })
 </script>
 
@@ -158,14 +124,13 @@ onBeforeUnmount(() => {
       <span class="section-eyebrow">Мониторинг направлений</span>
       <h1>Аналитика публикаций по Field</h1>
       <p>
-        Сводка активности, темпов роста и состояния Topic внутри выбранного Field на основе OpenAlex
-        monthly topic stats.
+        Сводка активности, темпов роста и состояния Topic внутри выбранного Field на основе OpenAlex monthly topic stats.
+        Изменение фильтров не запускает пересчет автоматически: нажмите «Обновить», когда параметры выбраны.
       </p>
     </div>
 
     <FieldAnalyticsFilters
       v-model:value="filters"
-      v-model:field-search="fieldSearch"
       :fields="fields"
       :loading="isLoading"
       @refresh="loadDashboard"
@@ -191,7 +156,7 @@ onBeforeUnmount(() => {
     </template>
 
     <div v-else-if="!isLoading" class="analytics-empty analytics-empty--page">
-      Выберите Field из базы данных, чтобы построить страницу аналитики научных направлений.
+      Выберите Field и нажмите «Обновить», чтобы построить страницу аналитики научных направлений.
     </div>
   </section>
 </template>

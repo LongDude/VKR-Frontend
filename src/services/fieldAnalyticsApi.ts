@@ -23,9 +23,8 @@ function appendIfPresent(params: URLSearchParams, name: string, value: string | 
 }
 
 export const fieldAnalyticsApi = {
-  listFields(query = '', limit = 50): Promise<FieldListResponse> {
+  listFields(limit = 50): Promise<FieldListResponse> {
     const params = new URLSearchParams()
-    appendIfPresent(params, 'query', query)
     appendIfPresent(params, 'limit', limit)
 
     return request<FieldListResponse>(`/analytics/fields?${params.toString()}`)

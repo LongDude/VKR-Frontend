@@ -4,10 +4,10 @@ import { computed, ref } from 'vue'
 import TopicStatusBadge from '@/components/analytics/TopicStatusBadge.vue'
 import type { RankingMode, TopicRankings } from '@/types/fieldAnalytics'
 import {
-  formatDecimal,
   formatInteger,
+  formatOptionalDecimal,
+  formatOptionalSignedPercent,
   formatPercent,
-  formatSignedPercent,
 } from '@/utils/fieldAnalyticsFormatters'
 
 const props = defineProps<{
@@ -20,7 +20,7 @@ const modes: Array<{ key: RankingMode; label: string }> = [
   { key: 'popular', label: 'Популярные' },
   { key: 'growing', label: 'Растущие' },
   { key: 'emerging', label: 'Появляющиеся' },
-  { key: 'declining', label: 'Стагнирующие' },
+  { key: 'declining', label: 'Теряют долю' },
 ]
 
 const rows = computed(() => props.rankings[activeMode.value] ?? [])
@@ -30,10 +30,10 @@ const rows = computed(() => props.rankings[activeMode.value] ?? [])
   <section class="analytics-panel ranking-panel">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Ranking</span>
+        <span class="section-eyebrow">Рейтинг</span>
         <h2>Топ тем</h2>
       </div>
-      <div class="ranking-tabs" role="tablist" aria-label="Режим ranking">
+      <div class="ranking-tabs" role="tablist" aria-label="Режим рейтинга">
         <button
           v-for="mode in modes"
           :key="mode.key"
@@ -51,15 +51,16 @@ const rows = computed(() => props.rankings[activeMode.value] ?? [])
       <table class="table analytics-table align-middle">
         <thead>
           <tr>
-            <th>Topic</th>
-            <th>Subfield</th>
+            <th>Тема (Topic)</th>
+            <th>Подобласть (Subfield)</th>
             <th>Публикации за 12 мес.</th>
             <th>Доля внутри Subfield</th>
             <th>Изменение доли</th>
-            <th>YoY growth</th>
+            <th>Рост</th>
             <th>Burst score</th>
-            <th>Confidence</th>
-            <th>Status</th>
+            <th>Уверенность</th>
+            <th>Покрытие</th>
+            <th>Статус</th>
           </tr>
         </thead>
         <tbody>
@@ -70,18 +71,19 @@ const rows = computed(() => props.rankings[activeMode.value] ?? [])
             <td>{{ row.subfield.name }}</td>
             <td>{{ formatInteger(row.papersLast12m) }}</td>
             <td>{{ formatPercent(row.share) }}</td>
-            <td :class="{ 'metric-negative': row.deltaShare < 0 }">
-              {{ formatSignedPercent(row.deltaShare) }}
+            <td :class="{ 'metric-negative': (row.deltaShare ?? 0) < 0 }">
+              {{ formatOptionalSignedPercent(row.deltaShare) }}
             </td>
-            <td :class="{ 'metric-negative': row.yoyGrowth < 0 }">
-              {{ formatSignedPercent(row.yoyGrowth) }}
+            <td :class="{ 'metric-negative': (row.yoyGrowth ?? 0) < 0 }">
+              {{ formatOptionalSignedPercent(row.yoyGrowth) }}
             </td>
-            <td>{{ formatDecimal(row.burstScore) }}</td>
+            <td>{{ formatOptionalDecimal(row.burstScore) }}</td>
             <td>{{ formatPercent(row.confidence) }}</td>
+            <td>{{ formatPercent(row.coverage) }}</td>
             <td><TopicStatusBadge :status="row.status" /></td>
           </tr>
           <tr v-if="rows.length === 0">
-            <td colspan="9" class="analytics-empty-cell">Нет данных для ranking.</td>
+            <td colspan="10" class="analytics-empty-cell">Нет данных для рейтинга.</td>
           </tr>
         </tbody>
       </table>

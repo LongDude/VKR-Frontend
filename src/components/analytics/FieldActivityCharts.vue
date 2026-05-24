@@ -7,8 +7,8 @@ import type { FieldActivity, SubfieldActivity } from '@/types/fieldAnalytics'
 import {
   formatInteger,
   formatMonthLabel,
+  formatOptionalSignedPercent,
   formatPercent,
-  formatSignedPercent,
 } from '@/utils/fieldAnalyticsFormatters'
 
 const props = defineProps<{
@@ -27,11 +27,19 @@ const fieldOption = computed<EChartsOption>(() => buildActivityOption(
   true,
 ))
 
+function formatNullableInteger(value: unknown): string {
+  if (value === null || value === undefined || value === '') {
+    return 'н/д'
+  }
+
+  return formatInteger(Number(value))
+}
+
 function buildActivityOption(
   title: string,
   periods: string[],
-  papers: number[],
-  movingAverage: number[],
+  papers: Array<number | null>,
+  movingAverage: Array<number | null>,
   showLegend: boolean,
 ): EChartsOption {
   return {
@@ -56,7 +64,7 @@ function buildActivityOption(
       : undefined,
     tooltip: {
       trigger: 'axis',
-      valueFormatter: (value) => formatInteger(Number(value)),
+      valueFormatter: formatNullableInteger,
     },
     xAxis: {
       axisLabel: {
@@ -78,7 +86,7 @@ function buildActivityOption(
         barMaxWidth: 18,
       },
       {
-        name: 'Moving average',
+        name: 'Скользящее среднее',
         type: 'line',
         data: movingAverage,
         smooth: true,
@@ -114,14 +122,18 @@ function buildActivityOption(
               <dd>{{ formatInteger(subfield.papersLast12m) }}</dd>
             </div>
             <div>
-              <dt>YoY/рост</dt>
-              <dd :class="{ 'metric-negative': subfield.yoyGrowth < 0 }">
-                {{ formatSignedPercent(subfield.yoyGrowth) }}
+              <dt>Рост</dt>
+              <dd :class="{ 'metric-negative': (subfield.yoyGrowth ?? 0) < 0 }">
+                {{ formatOptionalSignedPercent(subfield.yoyGrowth) }}
               </dd>
             </div>
             <div>
-              <dt>Share</dt>
+              <dt>Доля</dt>
               <dd>{{ formatPercent(subfield.shareInsideField) }}</dd>
+            </div>
+            <div>
+              <dt>Покрытие</dt>
+              <dd>{{ formatPercent(subfield.coverage) }}</dd>
             </div>
           </dl>
         </header>

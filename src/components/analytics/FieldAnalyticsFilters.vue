@@ -10,13 +10,11 @@ import { formatCompact } from '@/utils/fieldAnalyticsFormatters'
 const props = defineProps<{
   fields: AnalyticsField[]
   value: FieldAnalyticsQuery
-  fieldSearch: string
   loading?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:value': [value: FieldAnalyticsQuery]
-  'update:fieldSearch': [value: string]
   refresh: []
 }>()
 
@@ -48,21 +46,8 @@ function updateField(value: string): void {
 
 <template>
   <section class="analytics-filters">
-    <div class="analytics-filters__field">
-      <label class="form-label" for="field-search">Field</label>
-      <input
-        id="field-search"
-        class="form-control"
-        type="search"
-        :value="fieldSearch"
-        placeholder="Поиск Field из базы"
-        :disabled="loading"
-        @input="emit('update:fieldSearch', ($event.target as HTMLInputElement).value)"
-      />
-    </div>
-
     <div>
-      <label class="form-label" for="field-select">Выбранный Field</label>
+      <label class="form-label" for="field-select">Научное направление (Field)</label>
       <select
         id="field-select"
         class="form-select"
@@ -111,13 +96,13 @@ function updateField(value: string): void {
         @change="patchValue({ comparisonWindowMonths: toComparisonWindow(($event.target as HTMLSelectElement).value) })"
       >
         <option v-for="option in comparisonOptions" :key="option" :value="option">
-          {{ option }} месяцев
+          {{ option }} мес.
         </option>
       </select>
     </div>
 
     <div>
-      <label class="form-label" for="moving-average">Moving average</label>
+      <label class="form-label" for="moving-average">Скользящее среднее</label>
       <select
         id="moving-average"
         class="form-select"

@@ -25,12 +25,12 @@ const decimalNumber = new Intl.NumberFormat('ru-RU', {
 })
 
 export const statusLabels: Record<TopicStatus, string> = {
-  emerging: 'Emerging',
-  accelerating: 'Accelerating',
-  popular_hot: 'Popular/hot',
-  stable: 'Stable',
-  declining: 'Declining',
-  low_confidence: 'Low confidence',
+  emerging: 'Появляющаяся',
+  accelerating: 'Ускоряется',
+  popular_hot: 'Крупная стабильная',
+  stable: 'Без выраженной динамики',
+  declining: 'Теряет долю',
+  low_confidence: 'Низкая уверенность',
 }
 
 export const statusColors: Record<TopicStatus, string> = {
@@ -56,6 +56,18 @@ export function formatPercent(value: number): string {
 
 export function formatSignedPercent(value: number): string {
   return signedPercentNumber.format(value)
+}
+
+export function formatOptionalPercent(value: number | null): string {
+  return value === null ? 'н/д' : percentNumber.format(value)
+}
+
+export function formatOptionalSignedPercent(value: number | null): string {
+  return value === null ? 'н/д' : signedPercentNumber.format(value)
+}
+
+export function formatOptionalDecimal(value: number | null): string {
+  return value === null ? 'н/д' : decimalNumber.format(value)
 }
 
 export function formatDecimal(value: number): string {

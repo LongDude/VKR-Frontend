@@ -5,8 +5,9 @@ import { computed } from 'vue'
 import EChartPanel from '@/components/analytics/EChartPanel.vue'
 import type { TopicMapPoint, TopicStatus } from '@/types/fieldAnalytics'
 import {
-  formatDecimal,
   formatInteger,
+  formatOptionalDecimal,
+  formatOptionalSignedPercent,
   formatPercent,
   formatSignedPercent,
   statusColors,
@@ -50,15 +51,16 @@ const chartOption = computed<EChartsOption>(() => ({
 
       return [
         `<strong>${escapeHtml(point.topic.name)}</strong>`,
-        `Subfield: ${escapeHtml(point.subfield.name)}`,
+        `Подобласть: ${escapeHtml(point.subfield.name)}`,
         `Публикации за 12 мес.: ${formatInteger(point.papersLast12m)}`,
-        `Share: ${formatPercent(point.share)}`,
-        `ΔShare: ${formatSignedPercent(point.deltaShare)}`,
-        `Momentum: ${formatSignedPercent(point.momentum)}`,
-        `YoY/рост: ${formatSignedPercent(point.yoyGrowth)}`,
-        `Burst: ${formatDecimal(point.burstScore)}`,
-        `Confidence: ${formatPercent(point.confidence)}`,
-        `Status: ${statusLabels[point.status]}`,
+        `Доля: ${formatPercent(point.share)}`,
+        `Изменение доли: ${formatOptionalSignedPercent(point.deltaShare)}`,
+        `Momentum: ${formatOptionalSignedPercent(point.momentum)}`,
+        `Рост: ${formatOptionalSignedPercent(point.yoyGrowth)}`,
+        `Burst score: ${formatOptionalDecimal(point.burstScore)}`,
+        `Уверенность: ${formatPercent(point.confidence)}`,
+        `Покрытие: ${formatPercent(point.coverage)}`,
+        `Статус: ${statusLabels[point.status]}`,
       ].join('<br />')
     },
   },
@@ -73,7 +75,7 @@ const chartOption = computed<EChartsOption>(() => ({
     axisLabel: {
       formatter: (value: number) => formatSignedPercent(value),
     },
-    name: 'Momentum (ΔShare)',
+    name: 'Momentum (изменение доли)',
     nameGap: 48,
     nameLocation: 'middle',
     scale: true,
@@ -83,9 +85,9 @@ const chartOption = computed<EChartsOption>(() => ({
     name: statusLabels[status],
     type: 'scatter',
     data: props.points
-      .filter((point) => point.status === status)
+      .filter((point) => point.status === status && point.y !== null)
       .map((point) => ({
-        value: [point.x, point.y],
+        value: [point.x, point.y ?? 0],
         point,
       })),
     emphasis: {
@@ -112,19 +114,12 @@ function escapeHtml(value: string): string {
   <section class="analytics-panel">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Topic momentum</span>
+        <span class="section-eyebrow">Динамика Topic</span>
         <h2>Карта состояния Field</h2>
       </div>
     </div>
 
     <EChartPanel v-if="points.length > 0" :option="chartOption" height="440px" />
-    <div v-else class="analytics-empty">Нет Topic с данными за выбранный период.</div>
-
-    <div class="topic-map-legend">
-      <span>правый верхний угол — крупные и растущие темы</span>
-      <span>левый верхний угол — новые быстрорастущие темы</span>
-      <span>правый нижний угол — крупные, но теряющие темп</span>
-      <span>левый нижний угол — малые и неустойчивые темы</span>
-    </div>
+    <div v-else class="analytics-empty">Нет Topic с сопоставимыми данными за выбранный период.</div>
   </section>
 </template>
