@@ -130,6 +130,16 @@ export interface QuarterReportPaperRef {
   year?: number
 }
 
+export interface QuarterReportInsightItem {
+  id?: number
+  itemType?: string
+  title?: string
+  description?: string | null
+  maturity?: string | null
+  evidence?: unknown
+  sortOrder?: number
+}
+
 export interface QuarterReportItem {
   id: number
   topicId: number
@@ -142,7 +152,7 @@ export interface QuarterReportItem {
   futureDynamics: string | null
   metrics: Record<string, unknown>
   keywordDynamics: Record<string, unknown>
-  items: Array<Record<string, unknown>>
+  items: QuarterReportInsightItem[]
   papers: QuarterReportPaperRef[]
 }
 
@@ -160,6 +170,7 @@ export interface PaperMetadata {
   publicationDate: string | null
   language: string | null
   abstract: string | null
+  extractedKeywords: unknown
   isOpenAccess: boolean | null
   citedBy: number
   referencesCount: number

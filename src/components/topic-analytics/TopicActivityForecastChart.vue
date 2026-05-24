@@ -3,7 +3,7 @@ import type { EChartsOption } from 'echarts'
 import { computed } from 'vue'
 
 import EChartPanel from '@/components/analytics/EChartPanel.vue'
-import type { TopicActivity, TopicForecastPoint } from '@/types/topicAnalytics'
+import type { TopicActivity, TopicActivityPoint, TopicForecastPoint } from '@/types/topicAnalytics'
 import {
   formatInteger,
   formatMonthLabel,
@@ -23,15 +23,17 @@ type TooltipParam = {
   value?: unknown
 }
 
-const forecastPoints = computed(() => props.activity.forecast.filter((point): point is TopicForecastPoint & { period: string } => point.period !== null))
+const forecastPoints = computed(() =>
+  props.activity.forecast.filter((point): point is TopicForecastPoint & { period: string } => point.period !== null),
+)
 
 const hasData = computed(() => props.activity.series.length > 0 || forecastPoints.value.length > 0)
 
 const option = computed<EChartsOption>(() => {
-  const observedPeriods = props.activity.series.map((point) => point.period)
-  const forecastPeriods = forecastPoints.value.map((point) => point.period)
-  const periods = [...observedPeriods, ...forecastPeriods]
-  const forecastPrefix = props.activity.series.map(() => null)
+  const observedByPeriod = new Map(props.activity.series.map((point) => [point.period, point]))
+  const forecastByPeriod = new Map(forecastPoints.value.map((point) => [point.period, point]))
+  const periods = [...new Set([...observedByPeriod.keys(), ...forecastByPeriod.keys()])].sort()
+  const anchor = lastObservedPoint(props.activity.series)
 
   return {
     animation: false,
@@ -40,18 +42,10 @@ const option = computed<EChartsOption>(() => {
       bottom: 46,
       left: 60,
       right: 64,
-      top: 58,
+      top: 34,
     },
     legend: {
-      top: 8,
-    },
-    title: {
-      left: 0,
-      text: `Динамика и прогноз: ${props.topicName}`,
-      textStyle: {
-        fontSize: 15,
-        fontWeight: 700,
-      },
+      top: 0,
     },
     tooltip: {
       trigger: 'axis',
@@ -84,20 +78,14 @@ const option = computed<EChartsOption>(() => {
       {
         name: 'Публикации',
         type: 'line',
-        data: [
-          ...props.activity.series.map((point) => point.papers),
-          ...forecastPoints.value.map(() => null),
-        ],
+        data: periods.map((period) => observedByPeriod.get(period)?.papers ?? null),
         symbolSize: 5,
         yAxisIndex: 0,
       },
       {
         name: 'Прогноз публикаций',
         type: 'line',
-        data: [
-          ...forecastPrefix,
-          ...forecastPoints.value.map((point) => point.forecastCount),
-        ],
+        data: periods.map((period) => forecastByPeriod.get(period)?.forecastCount ?? (period === anchor?.period ? anchor.papers : null)),
         lineStyle: {
           type: 'dashed',
           width: 3,
@@ -108,10 +96,7 @@ const option = computed<EChartsOption>(() => {
       {
         name: 'Доля в Subfield',
         type: 'line',
-        data: [
-          ...props.activity.series.map((point) => point.share),
-          ...forecastPoints.value.map(() => null),
-        ],
+        data: periods.map((period) => observedByPeriod.get(period)?.share ?? null),
         lineStyle: {
           width: 3,
         },
@@ -122,10 +107,7 @@ const option = computed<EChartsOption>(() => {
       {
         name: 'Прогноз доли',
         type: 'line',
-        data: [
-          ...forecastPrefix,
-          ...forecastPoints.value.map((point) => point.forecastShare),
-        ],
+        data: periods.map((period) => forecastByPeriod.get(period)?.forecastShare ?? (period === anchor?.period ? anchor.share : null)),
         lineStyle: {
           type: 'dashed',
           width: 3,
@@ -137,6 +119,17 @@ const option = computed<EChartsOption>(() => {
     ],
   }
 })
+
+function lastObservedPoint(points: TopicActivityPoint[]): TopicActivityPoint | null {
+  for (let index = points.length - 1; index >= 0; index -= 1) {
+    const point = points[index]
+    if (point !== undefined && point.isObserved && point.papers !== null) {
+      return point
+    }
+  }
+
+  return null
+}
 
 function formatTooltip(params: unknown): string {
   const items = Array.isArray(params) ? (params as TooltipParam[]) : []
@@ -160,8 +153,8 @@ function formatTooltip(params: unknown): string {
   <section class="analytics-panel topic-activity-panel">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Динамика</span>
-        <h2>Активность Topic и прогноз</h2>
+        <span class="section-eyebrow">Динамика и прогноз</span>
+        <h2>{{ topicName }}</h2>
       </div>
     </div>
 

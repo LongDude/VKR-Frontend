@@ -17,6 +17,25 @@ const props = defineProps<{
 
 const rows = computed(() => props.items)
 const hasRadarValues = computed(() => props.items.some((item) => item.normalized !== null))
+const trendSummary = computed(() => {
+  const publicationGrowth = metricValue('publication_growth')
+  const shareGrowth = metricValue('share_growth')
+  const burstScore = metricValue('burst_score')
+
+  if (publicationGrowth === null && shareGrowth === null && burstScore === null) {
+    return 'Тренд не рассчитан: недостаточно данных для сравнения с предыдущим периодом.'
+  }
+
+  if ((shareGrowth ?? 0) > 0.005 || (burstScore ?? 0) > 0.75) {
+    return 'График объясняет усиливающийся тренд: тема увеличивает долю внутри Subfield или показывает выраженный burst.'
+  }
+
+  if ((shareGrowth ?? 0) < -0.005 || (publicationGrowth ?? 0) < -0.1) {
+    return 'График объясняет ослабевающий тренд: публикационная активность или доля темы снижается относительно предыдущего окна.'
+  }
+
+  return 'График объясняет стабильный тренд: изменения активности и доли темы находятся около нейтрального уровня.'
+})
 
 const option = computed<EChartsOption>(() => ({
   animation: false,
@@ -49,14 +68,19 @@ const option = computed<EChartsOption>(() => ({
     },
   ],
 }))
+
+function metricValue(key: string): number | null {
+  return props.items.find((item) => item.key === key)?.value ?? null
+}
 </script>
 
 <template>
   <section class="analytics-panel trend-decomposition">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Trend decomposition</span>
+        <span class="section-eyebrow">Декомпозиция тренда</span>
         <h2>Объяснение изменения тренда</h2>
+        <p class="trend-decomposition__summary">{{ trendSummary }}</p>
       </div>
     </div>
 

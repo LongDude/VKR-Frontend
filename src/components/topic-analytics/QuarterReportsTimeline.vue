@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { QuarterReportItem, QuarterReportPaperRef } from '@/types/topicAnalytics'
+import type {
+  QuarterReportInsightItem,
+  QuarterReportItem,
+  QuarterReportPaperRef,
+} from '@/types/topicAnalytics'
 
 defineProps<{
   items: QuarterReportItem[]
@@ -8,6 +12,20 @@ defineProps<{
 const emit = defineEmits<{
   'open-paper': [paperId: number]
 }>()
+
+const itemGroups: Array<{ title: string; types: string[] }> = [
+  { title: 'Основные методы', types: ['method'] },
+  { title: 'Подходы', types: ['approach', 'research_problem'] },
+  { title: 'Прогноз направлений исследований', types: ['future_direction'] },
+]
+
+const maturityLabels: Record<string, string> = {
+  emerging: 'появляется',
+  growing: 'растет',
+  stable: 'стабильно',
+  declining: 'снижается',
+  mature: 'зрелое',
+}
 
 function resolvePaperId(paper: QuarterReportPaperRef): number | null {
   const value = paper.paperId ?? paper.paper_id
@@ -20,14 +38,26 @@ function openPaper(paper: QuarterReportPaperRef): void {
     emit('open-paper', paperId)
   }
 }
+
+function itemsByTypes(report: QuarterReportItem, types: string[]): QuarterReportInsightItem[] {
+  return report.items.filter((item) => typeof item.itemType === 'string' && types.includes(item.itemType))
+}
+
+function maturityLabel(value: string | null | undefined): string | null {
+  if (!value) {
+    return null
+  }
+
+  return maturityLabels[value] ?? value
+}
 </script>
 
 <template>
   <section class="analytics-panel quarter-timeline">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">LLM reports</span>
-        <h2>Квартальная характеристика изменений</h2>
+        <span class="section-eyebrow">Квартальные отчеты</span>
+        <h2>Характеристика изменений предметной области</h2>
       </div>
     </div>
 
@@ -58,8 +88,28 @@ function openPaper(paper: QuarterReportPaperRef): void {
             </div>
           </dl>
 
+          <div class="quarter-insights">
+            <section
+              v-for="group in itemGroups"
+              :key="group.title"
+              class="quarter-insights__group"
+            >
+              <h3>{{ group.title }}</h3>
+              <ul v-if="itemsByTypes(report, group.types).length > 0">
+                <li v-for="item in itemsByTypes(report, group.types)" :key="item.id ?? item.title">
+                  <strong>{{ item.title }}</strong>
+                  <span v-if="maturityLabel(item.maturity)" class="quarter-insights__maturity">
+                    {{ maturityLabel(item.maturity) }}
+                  </span>
+                  <p v-if="item.description">{{ item.description }}</p>
+                </li>
+              </ul>
+              <p v-else class="quarter-insights__empty">Нет данных.</p>
+            </section>
+          </div>
+
           <div v-if="report.papers.length > 0" class="quarter-evidence">
-            <span>Evidence</span>
+            <span>Статьи-evidence</span>
             <button
               v-for="paper in report.papers"
               :key="`${report.id}-${resolvePaperId(paper) ?? paper.title}`"
@@ -68,7 +118,7 @@ function openPaper(paper: QuarterReportPaperRef): void {
               :disabled="resolvePaperId(paper) === null"
               @click="openPaper(paper)"
             >
-              {{ paper.title ?? `Paper ${resolvePaperId(paper)}` }}
+              {{ paper.title ?? `Статья ${resolvePaperId(paper)}` }}
             </button>
           </div>
         </article>

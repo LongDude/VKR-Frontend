@@ -49,12 +49,12 @@ function formatTrendStatus(value: string | null): string {
       <table class="table analytics-table align-middle">
         <thead>
           <tr>
-            <th>Related topic</th>
+            <th>Смежная тема</th>
             <th>Тип связи</th>
-            <th>Similarity</th>
-            <th>Shared keyphrases</th>
-            <th>Common papers / citations</th>
-            <th>Trend status</th>
+            <th>Сходство</th>
+            <th>Общие ключевые фразы</th>
+            <th>Общие статьи / цитирования</th>
+            <th>Состояние тренда</th>
           </tr>
         </thead>
         <tbody>

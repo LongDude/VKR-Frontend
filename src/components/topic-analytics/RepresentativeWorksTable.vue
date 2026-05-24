@@ -27,13 +27,13 @@ const emit = defineEmits<{
       <table class="table analytics-table align-middle representative-works-table">
         <thead>
           <tr>
-            <th>Title</th>
-            <th>Year / date</th>
-            <th>Authors</th>
-            <th>Source</th>
-            <th>Cited by</th>
-            <th>Citation velocity</th>
-            <th>Reason selected</th>
+            <th>Название</th>
+            <th>Год / дата</th>
+            <th>Авторы</th>
+            <th>Источник</th>
+            <th>Цитирований</th>
+            <th>Скорость цитирования</th>
+            <th>Причина выбора</th>
           </tr>
         </thead>
         <tbody>
