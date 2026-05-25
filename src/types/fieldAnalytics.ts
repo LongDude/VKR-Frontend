@@ -106,6 +106,9 @@ export interface TopicRankingItem {
   momentum: number | null
   yoyGrowth: number | null
   burstScore: number | null
+  trendScore: number | null
+  emergingScore: number | null
+  decliningScore: number | null
   confidence: number
   coverage: number
   status: TopicStatus

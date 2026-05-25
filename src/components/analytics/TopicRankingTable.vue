@@ -24,6 +24,34 @@ const modes: Array<{ key: RankingMode; label: string }> = [
 ]
 
 const rows = computed(() => props.rankings[activeMode.value] ?? [])
+
+const sortingMetricLabel = computed(() => {
+  if (activeMode.value === 'popular') {
+    return 'Критерий: публикации'
+  }
+  if (activeMode.value === 'growing') {
+    return 'Критерий: trend score'
+  }
+  if (activeMode.value === 'emerging') {
+    return 'Критерий: emerging score'
+  }
+
+  return 'Критерий: declining score'
+})
+
+function sortingMetricValue(row: (typeof rows.value)[number]): string {
+  if (activeMode.value === 'popular') {
+    return formatInteger(row.papersLast12m)
+  }
+  if (activeMode.value === 'growing') {
+    return formatOptionalDecimal(row.trendScore)
+  }
+  if (activeMode.value === 'emerging') {
+    return formatOptionalDecimal(row.emergingScore)
+  }
+
+  return formatOptionalDecimal(row.decliningScore)
+}
 </script>
 
 <template>
@@ -58,6 +86,7 @@ const rows = computed(() => props.rankings[activeMode.value] ?? [])
             <th>Изменение доли</th>
             <th>Рост</th>
             <th>Burst score</th>
+            <th>{{ sortingMetricLabel }}</th>
             <th>Уверенность</th>
             <th>Покрытие</th>
             <th>Статус</th>
@@ -78,12 +107,13 @@ const rows = computed(() => props.rankings[activeMode.value] ?? [])
               {{ formatOptionalSignedPercent(row.yoyGrowth) }}
             </td>
             <td>{{ formatOptionalDecimal(row.burstScore) }}</td>
+            <td>{{ sortingMetricValue(row) }}</td>
             <td>{{ formatPercent(row.confidence) }}</td>
             <td>{{ formatPercent(row.coverage) }}</td>
             <td><TopicStatusBadge :status="row.status" /></td>
           </tr>
           <tr v-if="rows.length === 0">
-            <td colspan="10" class="analytics-empty-cell">Нет данных для рейтинга.</td>
+            <td colspan="11" class="analytics-empty-cell">Нет данных для рейтинга.</td>
           </tr>
         </tbody>
       </table>
