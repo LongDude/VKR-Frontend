@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import LoadingTimer from '@/components/LoadingTimer.vue'
 import PaperMetadataModal from '@/components/papers/PaperMetadataModal.vue'
 import TaxonomyTagCloud from '@/components/user/TaxonomyTagCloud.vue'
 import { emptySelectedTags, userToolsApi } from '@/services/userToolsApi'
@@ -288,7 +289,8 @@ function keywordLabels(value: unknown, maxItems = 6): string[] {
         </div>
       </header>
 
-      <div v-if="loading && recommendations.length === 0" class="analytics-loading">Расчет рекомендаций...</div>
+      <LoadingTimer v-if="loading && recommendations.length === 0" label="Расчет рекомендаций..." />
+      <LoadingTimer v-else-if="loading" label="Обновление рекомендаций..." compact />
       <div v-else-if="recommendations.length === 0" class="analytics-empty">
         Нажмите «Показать рекомендации», чтобы сформировать подборку.
       </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
+import LoadingTimer from '@/components/LoadingTimer.vue'
 import PaperMetadataModal from '@/components/papers/PaperMetadataModal.vue'
 import QuarterReportsTimeline from '@/components/topic-analytics/QuarterReportsTimeline.vue'
 import RelatedTopicsTable from '@/components/topic-analytics/RelatedTopicsTable.vue'
@@ -231,7 +232,7 @@ onMounted(() => {
 <template>
   <section class="page-stack topic-analytics-page">
     <div class="page-heading">
-      <span class="section-eyebrow">Аналитика Topic</span>
+      <span class="section-eyebrow">Аналитика предметной области</span>
       <h1>Предметная область</h1>
       <p>
         Паспорт выбранной темы, динамику публикаций внутри Subfield,
@@ -253,9 +254,11 @@ onMounted(() => {
       {{ errorMessage }}
     </div>
 
-    <div v-if="isLoadingDashboard && dashboard === null" class="analytics-loading">
-      Загрузка аналитики Topic...
-    </div>
+    <LoadingTimer
+      v-if="(isLoading || isLoadingTopics) && dashboard === null"
+      :label="isLoadingFields ? 'Сбор статистики публикаций...' : isLoadingTopics ? 'Загрузка списка предметных областей...' : 'Загрузка аналитики предметной области...'"
+    />
+    <LoadingTimer v-else-if="isLoadingDashboard || isLoadingTopics" label="Обновление данных предметной области..." compact />
 
     <template v-if="dashboard !== null">
       <div v-if="!dashboard.mlStatus.available && mlError" class="alert alert-warning analytics-alert" role="alert">

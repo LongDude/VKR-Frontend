@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 
+import LoadingTimer from '@/components/LoadingTimer.vue'
 import TaxonomyTagCloud from '@/components/user/TaxonomyTagCloud.vue'
 import { useAuthStore } from '@/stores/auth'
 import { userToolsApi } from '@/services/userToolsApi'
@@ -41,6 +42,7 @@ const tracked = ref<TaxonomyTagGroups>({
 })
 
 const roles = computed(() => user.value?.roles.join(', ') || 'ROLE_USER')
+const hasTrackedTags = computed(() => Object.values(tracked.value).some((items) => items.length > 0))
 
 function openEdit(): void {
   editForm.name = user.value?.name ?? ''
@@ -236,7 +238,14 @@ onMounted(() => {
       <div v-if="passwordError" class="alert alert-danger mb-0" role="alert">{{ passwordError }}</div>
     </section>
 
+    <LoadingTimer
+      v-if="trackedBusy && !hasTrackedTags"
+      label="Загрузка отслеживаемых интересов..."
+    />
+    <LoadingTimer v-else-if="trackedBusy" label="Обновление отслеживаемых интересов..." compact />
+
     <TaxonomyTagCloud
+      v-if="!trackedBusy || hasTrackedTags"
       :groups="tracked"
       :busy="trackedBusy"
       title="Отслеживаемые научные интересы"

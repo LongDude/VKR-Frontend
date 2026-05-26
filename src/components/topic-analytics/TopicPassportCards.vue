@@ -16,7 +16,7 @@ defineProps<{
 <template>
   <section class="topic-passport">
     <article class="topic-passport__identity">
-      <span class="section-eyebrow">Паспорт Topic</span>
+      <span class="section-eyebrow">Паспорт предметной области</span>
       <h2>{{ kpi.topicName }}</h2>
       <dl>
         <div>

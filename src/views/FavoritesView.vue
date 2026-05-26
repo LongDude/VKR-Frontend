@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
+import LoadingTimer from '@/components/LoadingTimer.vue'
 import PaperMetadataModal from '@/components/papers/PaperMetadataModal.vue'
 import { userToolsApi } from '@/services/userToolsApi'
 import type { PaperMetadata } from '@/types/topicAnalytics'
@@ -155,7 +156,8 @@ onMounted(() => {
       </header>
 
       <div v-if="errorMessage" class="alert alert-danger" role="alert">{{ errorMessage }}</div>
-      <div v-if="loading && papers.length === 0" class="analytics-loading">Загрузка избранного...</div>
+      <LoadingTimer v-if="loading && papers.length === 0" label="Загрузка избранного..." />
+      <LoadingTimer v-else-if="loading" label="Обновление списка избранного..." compact />
       <div v-else-if="papers.length === 0" class="analytics-empty">В избранном пока нет статей.</div>
 
       <div v-else class="paper-list">

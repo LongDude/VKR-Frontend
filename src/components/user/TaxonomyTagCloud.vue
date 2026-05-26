@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
+import LoadingTimer from '@/components/LoadingTimer.vue'
 import { userToolsApi } from '@/services/userToolsApi'
 import type {
   TaxonomyGroupKey,
@@ -181,7 +182,8 @@ onBeforeUnmount(() => {
             <span>{{ item.name }}</span>
             <strong>{{ formatInteger(item.papersCount ?? 0) }}</strong>
           </button>
-          <div v-if="!loadingOptions && options.length === 0" class="tag-search-options__empty">
+          <LoadingTimer v-if="loadingOptions" label="Поиск вариантов..." compact />
+          <div v-else-if="options.length === 0" class="tag-search-options__empty">
             {{ query.trim().length < 2 ? 'Введите минимум 2 символа' : 'Нет вариантов' }}
           </div>
         </div>

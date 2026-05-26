@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import LoadingTimer from '@/components/LoadingTimer.vue'
 import type { PaperMetadata } from '@/types/topicAnalytics'
 import { formatInteger } from '@/utils/fieldAnalyticsFormatters'
 
@@ -91,7 +92,7 @@ function normalizeExtractedKeywords(value: unknown): string[] {
             </header>
 
             <div class="modal-body paper-modal-body">
-              <div v-if="loading" class="analytics-loading">Загрузка статьи...</div>
+              <LoadingTimer v-if="loading" label="Загрузка статьи..." />
               <div v-else-if="error" class="alert alert-danger analytics-alert" role="alert">{{ error }}</div>
               <article v-else-if="paper" class="paper-metadata">
                 <section class="card paper-card">

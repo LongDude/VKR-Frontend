@@ -79,10 +79,10 @@ function sortingMetricValue(row: (typeof rows.value)[number]): string {
       <table class="table analytics-table align-middle">
         <thead>
           <tr>
-            <th>Тема (Topic)</th>
-            <th>Подобласть (Subfield)</th>
+            <th>Предметная область (Topic)</th>
+            <th>Поднаправление (Subfield)</th>
             <th>Публикации за 12 мес.</th>
-            <th>Доля внутри Subfield</th>
+            <th>Доля внутри поднаправления</th>
             <th>Изменение доли</th>
             <th>Рост</th>
             <th>Burst score</th>

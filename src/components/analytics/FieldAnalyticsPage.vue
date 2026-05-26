@@ -6,6 +6,7 @@ import FieldAnalyticsFilters from '@/components/analytics/FieldAnalyticsFilters.
 import FieldKpiCards from '@/components/analytics/FieldKpiCards.vue'
 import TopicMapChart from '@/components/analytics/TopicMapChart.vue'
 import TopicRankingTable from '@/components/analytics/TopicRankingTable.vue'
+import LoadingTimer from '@/components/LoadingTimer.vue'
 import { fieldAnalyticsApi } from '@/services/fieldAnalyticsApi'
 import type { AnalyticsField, FieldAnalyticsQuery, FieldDashboardResponse } from '@/types/fieldAnalytics'
 
@@ -139,9 +140,11 @@ onMounted(() => {
       {{ errorMessage }}
     </div>
 
-    <div v-if="isLoadingDashboard && dashboard === null" class="analytics-loading">
-      Загрузка аналитики...
-    </div>
+    <LoadingTimer
+      v-if="isLoading && dashboard === null"
+      :label="isLoadingFields ? 'Загрузка списка Field...' : 'Загрузка аналитики...'"
+    />
+    <LoadingTimer v-else-if="isLoadingDashboard" label="Обновление аналитики..." compact />
 
     <template v-if="dashboard !== null">
       <FieldKpiCards :kpi="dashboard.kpi" />

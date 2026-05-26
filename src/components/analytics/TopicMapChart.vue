@@ -55,7 +55,6 @@ const chartOption = computed<EChartsOption>(() => ({
         `Публикации за 12 мес.: ${formatInteger(point.papersLast12m)}`,
         `Доля: ${formatPercent(point.share)}`,
         `Изменение доли: ${formatOptionalSignedPercent(point.deltaShare)}`,
-        `Momentum: ${formatOptionalSignedPercent(point.momentum)}`,
         `Рост: ${formatOptionalSignedPercent(point.yoyGrowth)}`,
         `Burst score: ${formatOptionalDecimal(point.burstScore)}`,
         `Уверенность: ${formatPercent(point.confidence)}`,
@@ -75,7 +74,7 @@ const chartOption = computed<EChartsOption>(() => ({
     axisLabel: {
       formatter: (value: number) => formatSignedPercent(value),
     },
-    name: 'Momentum (изменение доли)',
+    name: 'Изменение доли',
     nameGap: 48,
     nameLocation: 'middle',
     scale: true,
@@ -114,12 +113,12 @@ function escapeHtml(value: string): string {
   <section class="analytics-panel">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Динамика Topic</span>
-        <h2>Карта состояния Field</h2>
+        <span class="section-eyebrow">Динамика предметной области</span>
+        <h2>Карта состояния научного направления (Field)</h2>
       </div>
     </div>
 
     <EChartPanel v-if="points.length > 0" :option="chartOption" height="440px" />
-    <div v-else class="analytics-empty">Нет Topic с сопоставимыми данными за выбранный период.</div>
+    <div v-else class="analytics-empty">Нет предметной области с сопоставимыми данными за выбранный период.</div>
   </section>
 </template>

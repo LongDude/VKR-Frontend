@@ -28,12 +28,12 @@ function coverageLabel(window: AnalyticsWindow): string {
     </article>
 
     <article class="analytics-kpi__card">
-      <span>Область (Field)</span>
+      <span>Научное направление (Field)</span>
       <strong class="analytics-kpi__text">{{ kpi.fieldName }}</strong>
     </article>
 
     <article class="analytics-kpi__card">
-      <span>Подобласти (Subfields)</span>
+      <span>Поднаправления (Subfields)</span>
       <strong>{{ formatInteger(kpi.subfieldsCount) }}</strong>
     </article>
 
@@ -58,7 +58,7 @@ function coverageLabel(window: AnalyticsWindow): string {
     </article>
 
     <article class="analytics-kpi__card">
-      <span>Активные Topic</span>
+      <span>Активные предметные области</span>
       <strong>{{ formatInteger(kpi.activeTopics) }}</strong>
       <small>порог: 10 публикаций за последние 12 месяцев</small>
     </article>
