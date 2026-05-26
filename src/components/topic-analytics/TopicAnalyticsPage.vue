@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
-import PaperMetadataModal from '@/components/topic-analytics/PaperMetadataModal.vue'
+import PaperMetadataModal from '@/components/papers/PaperMetadataModal.vue'
 import QuarterReportsTimeline from '@/components/topic-analytics/QuarterReportsTimeline.vue'
 import RelatedTopicsTable from '@/components/topic-analytics/RelatedTopicsTable.vue'
 import RepresentativeWorksTable from '@/components/topic-analytics/RepresentativeWorksTable.vue'
@@ -11,6 +11,7 @@ import TopicPassportCards from '@/components/topic-analytics/TopicPassportCards.
 import TrendDecompositionRadar from '@/components/topic-analytics/TrendDecompositionRadar.vue'
 import { fieldAnalyticsApi } from '@/services/fieldAnalyticsApi'
 import { topicAnalyticsApi } from '@/services/topicAnalyticsApi'
+import { userToolsApi } from '@/services/userToolsApi'
 import type { AnalyticsField } from '@/types/fieldAnalytics'
 import type {
   PaperMetadata,
@@ -39,6 +40,7 @@ const errorMessage = ref<string | null>(null)
 const paperModalOpen = ref(false)
 const paperLoading = ref(false)
 const paperError = ref<string | null>(null)
+const paperFavoriteBusy = ref(false)
 const selectedPaper = ref<PaperMetadata | null>(null)
 
 let fieldsRequestId = 0
@@ -178,7 +180,7 @@ async function openPaper(paperId: number): Promise<void> {
   selectedPaper.value = null
 
   try {
-    const response = await topicAnalyticsApi.paper(paperId)
+    const response = await userToolsApi.paper(paperId)
     if (requestId === paperRequestId) {
       selectedPaper.value = response
     }
@@ -195,6 +197,30 @@ async function openPaper(paperId: number): Promise<void> {
 
 function closePaperModal(): void {
   paperModalOpen.value = false
+}
+
+async function togglePaperFavorite(paperId: number, nextValue: boolean): Promise<void> {
+  if (paperFavoriteBusy.value) {
+    return
+  }
+
+  paperFavoriteBusy.value = true
+  paperError.value = null
+  try {
+    const response = nextValue
+      ? await userToolsApi.addFavorite(paperId)
+      : await userToolsApi.removeFavorite(paperId)
+    if (selectedPaper.value?.id === paperId) {
+      selectedPaper.value = {
+        ...selectedPaper.value,
+        isFavorite: response.isFavorite,
+      }
+    }
+  } catch (error) {
+    paperError.value = error instanceof Error ? error.message : 'Не удалось обновить избранное.'
+  } finally {
+    paperFavoriteBusy.value = false
+  }
 }
 
 onMounted(() => {
@@ -255,8 +281,10 @@ onMounted(() => {
       :open="paperModalOpen"
       :loading="paperLoading"
       :error="paperError"
+      :favorite-busy="paperFavoriteBusy"
       :paper="selectedPaper"
       @close="closePaperModal"
+      @toggle-favorite="togglePaperFavorite"
     />
   </section>
 </template>

@@ -63,10 +63,6 @@ async function handleLogout(): Promise<void> {
           </ul>
 
           <div class="d-flex align-items-lg-center gap-2 session-controls">
-            <RouterLink class="btn btn-outline-primary btn-sm profile-action" :to="{ name: 'profile' }">
-              Личный кабинет
-            </RouterLink>
-
             <div class="dropdown">
               <button
                 class="btn btn-light border dropdown-toggle session-button"

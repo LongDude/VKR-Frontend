@@ -10,5 +10,6 @@ import './assets/styles/layout.css'
 import './assets/styles/auth.css'
 import './assets/styles/field-analytics.css'
 import './assets/styles/topic-analytics.css'
+import './assets/styles/user-tools.css'
 
 createApp(App).use(router).mount('#app')

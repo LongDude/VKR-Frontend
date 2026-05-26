@@ -172,6 +172,7 @@ export interface PaperMetadata {
   abstract: string | null
   extractedKeywords: unknown
   isOpenAccess: boolean | null
+  isFavorite: boolean
   citedBy: number
   referencesCount: number
   authors: Array<Record<string, unknown>>

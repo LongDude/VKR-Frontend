@@ -19,3 +19,14 @@ export interface LoginPayload {
 export interface RegisterPayload extends LoginPayload {
   name?: string
 }
+
+export interface UpdateProfilePayload {
+  name: string
+  email: string
+}
+
+export interface UpdatePasswordPayload {
+  currentPassword: string
+  newPassword: string
+  newPasswordConfirmation: string
+}

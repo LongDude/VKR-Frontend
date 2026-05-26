@@ -1,7 +1,13 @@
 import { computed, readonly, ref } from 'vue'
 
 import { ApiError, authApi } from '@/services/authApi'
-import type { AuthUser, LoginPayload, RegisterPayload } from '@/types/auth'
+import type {
+  AuthUser,
+  LoginPayload,
+  RegisterPayload,
+  UpdatePasswordPayload,
+  UpdateProfilePayload,
+} from '@/types/auth'
 
 const user = ref<AuthUser | null>(null)
 const initialized = ref(false)
@@ -100,6 +106,30 @@ async function logout(): Promise<void> {
   }
 }
 
+async function updateProfile(payload: UpdateProfilePayload): Promise<AuthUser | null> {
+  loading.value = true
+
+  try {
+    const response = await authApi.updateProfile(payload)
+    user.value = response.user
+    initialized.value = true
+
+    return user.value
+  } finally {
+    loading.value = false
+  }
+}
+
+async function updatePassword(payload: UpdatePasswordPayload): Promise<void> {
+  loading.value = true
+
+  try {
+    await authApi.updatePassword(payload)
+  } finally {
+    loading.value = false
+  }
+}
+
 export function useAuthStore() {
   return {
     user: readonly(user),
@@ -111,6 +141,8 @@ export function useAuthStore() {
     loadCurrentUser,
     login,
     register,
+    updateProfile,
+    updatePassword,
     logout,
   }
 }

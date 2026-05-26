@@ -8,11 +8,13 @@ const props = defineProps<{
   open: boolean
   loading?: boolean
   error?: string | null
+  favoriteBusy?: boolean
   paper: PaperMetadata | null
 }>()
 
 const emit = defineEmits<{
   close: []
+  toggleFavorite: [paperId: number, nextValue: boolean]
 }>()
 
 const extractedKeywordLabels = computed(() => normalizeExtractedKeywords(props.paper?.extractedKeywords ?? null))
@@ -69,9 +71,21 @@ function normalizeExtractedKeywords(value: unknown): string[] {
       <div class="topic-modal" role="dialog" aria-modal="true" @click.self="emit('close')">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
           <div class="modal-content">
-            <header class="modal-header">
+            <header class="modal-header paper-modal-header">
               <h2 class="modal-title">Метаданные статьи</h2>
-              <button class="btn-close" type="button" aria-label="Закрыть" @click="emit('close')"></button>
+              <div class="d-flex align-items-center gap-2">
+                <button
+                  v-if="paper"
+                  class="btn btn-sm"
+                  :class="paper.isFavorite ? 'btn-outline-danger' : 'btn-outline-primary'"
+                  type="button"
+                  :disabled="favoriteBusy"
+                  @click="emit('toggleFavorite', paper.id, !paper.isFavorite)"
+                >
+                  {{ favoriteBusy ? 'Сохранение...' : paper.isFavorite ? 'Удалить из избранного' : 'В избранное' }}
+                </button>
+                <button class="btn-close" type="button" aria-label="Закрыть" @click="emit('close')"></button>
+              </div>
             </header>
 
             <div class="modal-body paper-modal-body">
