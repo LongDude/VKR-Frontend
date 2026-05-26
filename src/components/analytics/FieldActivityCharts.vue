@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EChartsOption } from 'echarts'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import EChartPanel from '@/components/analytics/EChartPanel.vue'
 import type { FieldActivity, SubfieldActivity } from '@/types/fieldAnalytics'
@@ -17,7 +17,25 @@ const props = defineProps<{
   subfieldActivity: SubfieldActivity
 }>()
 
-const topSubfields = computed(() => props.subfieldActivity.items.slice(0, 8))
+const SUBFIELD_CHARTS_PER_PAGE = 6
+
+const subfieldPage = ref(0)
+
+const subfields = computed(() => props.subfieldActivity.items)
+const hasSubfieldCarousel = computed(() => subfields.value.length > SUBFIELD_CHARTS_PER_PAGE)
+const subfieldPageCount = computed(() => Math.ceil(subfields.value.length / SUBFIELD_CHARTS_PER_PAGE))
+const visibleSubfields = computed(() => {
+  const start = subfieldPage.value * SUBFIELD_CHARTS_PER_PAGE
+
+  return subfields.value.slice(start, start + SUBFIELD_CHARTS_PER_PAGE)
+})
+
+watch(
+  () => subfields.value.length,
+  () => {
+    subfieldPage.value = 0
+  },
+)
 
 const fieldOption = computed<EChartsOption>(() => buildActivityOption(
   `Активность публикаций: ${props.fieldName}`,
@@ -33,6 +51,12 @@ function formatNullableInteger(value: unknown): string {
   }
 
   return formatInteger(Number(value))
+}
+
+function goToSubfieldPage(page: number): void {
+  const lastPage = subfieldPageCount.value - 1
+
+  subfieldPage.value = Math.min(Math.max(page, 0), lastPage)
 }
 
 function buildActivityOption(
@@ -112,8 +136,32 @@ function buildActivityOption(
     <EChartPanel v-if="fieldActivity.series.length > 0" :option="fieldOption" height="360px" />
     <div v-else class="analytics-empty">Нет данных за выбранный период.</div>
 
+    <div v-if="hasSubfieldCarousel" class="subfield-carousel">
+      <button
+        class="subfield-carousel__button"
+        type="button"
+        aria-label="Previous subfields"
+        :disabled="subfieldPage === 0"
+        @click="goToSubfieldPage(subfieldPage - 1)"
+      >
+        <span aria-hidden="true">&lsaquo;</span>
+      </button>
+      <div class="subfield-carousel__status">
+        {{ subfieldPage + 1 }} / {{ subfieldPageCount }}
+      </div>
+      <button
+        class="subfield-carousel__button"
+        type="button"
+        aria-label="Next subfields"
+        :disabled="subfieldPage === subfieldPageCount - 1"
+        @click="goToSubfieldPage(subfieldPage + 1)"
+      >
+        <span aria-hidden="true">&rsaquo;</span>
+      </button>
+    </div>
+
     <div class="subfield-small-multiples">
-      <article v-for="subfield in topSubfields" :key="subfield.id" class="subfield-chart">
+      <article v-for="subfield in visibleSubfields" :key="subfield.id" class="subfield-chart">
         <header>
           <h3>{{ subfield.name }}</h3>
           <dl>

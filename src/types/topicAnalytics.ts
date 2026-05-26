@@ -118,6 +118,8 @@ export interface RepresentativeWork {
   date: string | null
   authors: string
   source: string | null
+  extractedKeywords?: unknown
+  keywords?: Array<Record<string, unknown>>
   citedBy: number
   citationVelocity: number | null
   reasonSelected: string

@@ -17,6 +17,10 @@ const props = defineProps<{
 
 const rows = computed(() => props.items)
 const hasRadarValues = computed(() => props.items.some((item) => item.normalized !== null))
+const radarMax = computed(() => {
+  const maxValue = Math.max(...props.items.map((item) => item.normalized ?? 0))
+  return maxValue > 0 ? maxValue : 1
+})
 const trendSummary = computed(() => {
   const publicationGrowth = metricValue('publication_growth')
   const shareGrowth = metricValue('share_growth')
@@ -43,11 +47,19 @@ const option = computed<EChartsOption>(() => ({
   radar: {
     indicator: props.items.map((item) => ({
       name: metricLabels[item.key] ?? item.label,
-      max: 1,
+      max: radarMax.value,
     })),
     radius: '64%',
   },
   tooltip: {
+    formatter: () => {
+      const rows = props.items.map((item) => {
+        const label = metricLabels[item.key] ?? item.label
+        const value = item.normalized === null ? 'н/д' : item.normalized.toFixed(2)
+        return `${label}: ${value}`
+      })
+      return [`<strong>Вклад факторов</strong>`, ...rows].join('<br>')
+    },
     trigger: 'item',
   },
   series: [

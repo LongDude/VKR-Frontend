@@ -110,6 +110,46 @@
   gap: 1rem;
 }
 
+.subfield-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.subfield-carousel__button {
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--sc-border);
+  border-radius: 0.45rem;
+  background: #ffffff;
+  color: var(--sc-text);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.subfield-carousel__button:hover:not(:disabled) {
+  border-color: rgba(47, 111, 237, 0.35);
+  background: #eef4ff;
+  color: var(--analytics-blue);
+}
+
+.subfield-carousel__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.subfield-carousel__status {
+  min-width: 3.5rem;
+  color: var(--sc-muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 .subfield-small-multiples {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -314,6 +354,10 @@
 
   .analytics-panel__title {
     display: grid;
+  }
+
+  .subfield-carousel {
+    justify-content: flex-start;
   }
 
   .ranking-tabs {

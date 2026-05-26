@@ -15,8 +15,9 @@ const emit = defineEmits<{
 
 const itemGroups: Array<{ title: string; types: string[] }> = [
   { title: 'Основные методы', types: ['method'] },
-  { title: 'Подходы', types: ['approach', 'research_problem'] },
-  { title: 'Прогноз направлений исследований', types: ['future_direction'] },
+  { title: 'Подходы', types: ['approach'] },
+  { title: 'Проблемы', types: ['research_problem'] },
+  { title: 'Прогноз', types: ['future_direction'] },
 ]
 
 const maturityLabels: Record<string, string> = {
@@ -72,7 +73,6 @@ function maturityLabel(value: string | null | undefined): string | null {
             <span>{{ report.periodKey }}</span>
             <strong>{{ report.periodStart }} - {{ report.periodEnd }}</strong>
           </header>
-          <p v-if="report.summary">{{ report.summary }}</p>
           <dl>
             <div v-if="report.periodCharacterization">
               <dt>Что произошло</dt>
@@ -89,23 +89,23 @@ function maturityLabel(value: string | null | undefined): string | null {
           </dl>
 
           <div class="quarter-insights">
-            <section
+            <details
               v-for="group in itemGroups"
               :key="group.title"
               class="quarter-insights__group"
             >
-              <h3>{{ group.title }}</h3>
+              <summary>{{ group.title }}</summary>
               <ul v-if="itemsByTypes(report, group.types).length > 0">
                 <li v-for="item in itemsByTypes(report, group.types)" :key="item.id ?? item.title">
                   <strong>{{ item.title }}</strong>
-                  <span v-if="maturityLabel(item.maturity)" class="quarter-insights__maturity">
+                  <!-- <span v-if="maturityLabel(item.maturity)" class="quarter-insights__maturity">
                     {{ maturityLabel(item.maturity) }}
-                  </span>
+                  </span> -->
                   <p v-if="item.description">{{ item.description }}</p>
                 </li>
               </ul>
               <p v-else class="quarter-insights__empty">Нет данных.</p>
-            </section>
+            </details>
           </div>
 
           <div v-if="report.papers.length > 0" class="quarter-evidence">
