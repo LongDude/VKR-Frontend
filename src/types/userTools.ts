@@ -39,6 +39,7 @@ export interface PaperSummary {
   isOpenAccess: boolean | null
   citedBy: number
   referencesCount: number
+  extractedKeywords?: unknown
   authors?: string
   isFavorite: boolean
 }

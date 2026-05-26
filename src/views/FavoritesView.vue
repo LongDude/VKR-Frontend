@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 import PaperMetadataModal from '@/components/papers/PaperMetadataModal.vue'
 import { userToolsApi } from '@/services/userToolsApi'
@@ -12,6 +12,8 @@ const total = ref(0)
 const loading = ref(false)
 const errorMessage = ref<string | null>(null)
 const actionBusyId = ref<number | null>(null)
+const currentPage = ref(1)
+const pageSize = ref(10)
 
 const modalOpen = ref(false)
 const modalLoading = ref(false)
@@ -22,18 +24,23 @@ const modalFavoriteBusy = ref(false)
 let listRequestId = 0
 let paperRequestId = 0
 
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+
 async function loadFavorites(): Promise<void> {
   const requestId = ++listRequestId
   loading.value = true
   errorMessage.value = null
 
   try {
-    const response = await userToolsApi.favorites(100, 0)
+    const response = await userToolsApi.favorites(pageSize.value, (currentPage.value - 1) * pageSize.value)
     if (requestId !== listRequestId) {
       return
     }
     papers.value = response.items
     total.value = response.total
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = totalPages.value
+    }
   } catch (error) {
     if (requestId === listRequestId) {
       errorMessage.value = error instanceof Error ? error.message : 'Не удалось загрузить избранное.'
@@ -43,6 +50,15 @@ async function loadFavorites(): Promise<void> {
       loading.value = false
     }
   }
+}
+
+async function changePage(page: number): Promise<void> {
+  const nextPage = Math.max(1, Math.min(totalPages.value, page))
+  if (nextPage === currentPage.value) {
+    return
+  }
+  currentPage.value = nextPage
+  await loadFavorites()
 }
 
 async function openPaper(paperId: number): Promise<void> {
@@ -154,13 +170,23 @@ onMounted(() => {
             </p>
           </div>
           <div class="paper-list-item__meta">
-            <span>Цитирований: {{ formatInteger(paper.citedBy) }}</span>
+            <span>Цитирования | {{ formatInteger(paper.citedBy) }}</span>
             <button class="btn btn-outline-danger btn-sm" type="button" :disabled="actionBusyId === paper.id" @click="removeFavorite(paper.id)">
               {{ actionBusyId === paper.id ? 'Удаление...' : 'Удалить' }}
             </button>
           </div>
         </article>
       </div>
+
+      <nav v-if="total > 0" class="user-pagination" aria-label="Пагинация избранного">
+        <button class="btn btn-light border btn-sm" type="button" :disabled="currentPage <= 1 || loading" @click="changePage(currentPage - 1)">
+          Назад
+        </button>
+        <span>Страница {{ currentPage }} из {{ totalPages }}</span>
+        <button class="btn btn-light border btn-sm" type="button" :disabled="currentPage >= totalPages || loading" @click="changePage(currentPage + 1)">
+          Вперед
+        </button>
+      </nav>
     </div>
 
     <PaperMetadataModal

@@ -72,8 +72,10 @@ function normalizeExtractedKeywords(value: unknown): string[] {
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
           <div class="modal-content">
             <header class="modal-header paper-modal-header">
-              <h2 class="modal-title">Метаданные статьи</h2>
-              <div class="d-flex align-items-center gap-2">
+              <div class="paper-modal-header__title">
+                <h2 class="modal-title">Метаданные статьи</h2>
+              </div>
+              <div class="paper-modal-header__actions">
                 <button
                   v-if="paper"
                   class="btn btn-sm"

@@ -29,6 +29,8 @@ const loading = ref(false)
 const errorMessage = ref<string | null>(null)
 const excludeFavorites = ref(true)
 const limit = ref(20)
+const currentPage = ref(1)
+const pageSize = ref(10)
 
 const modalOpen = ref(false)
 const modalLoading = ref(false)
@@ -43,6 +45,11 @@ let paperRequestId = 0
 const hasTemporaryTags = computed(() =>
   Object.values(tempTags.value).some((items) => items.length > 0),
 )
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+const pageItems = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return recommendations.value.slice(start, start + pageSize.value)
+})
 
 function groupForType(type: TaxonomyTagType): TaxonomyGroupKey {
   return `${type}s` as TaxonomyGroupKey
@@ -85,7 +92,7 @@ async function loadRecommendations(): Promise<void> {
 
   try {
     const response = await userToolsApi.recommendations({
-      limit: limit.value,
+      limit: Math.min(100, Math.max(limit.value, currentPage.value * pageSize.value)),
       excludeFavorites: excludeFavorites.value,
       selectedTags: selectedTags(),
     })
@@ -94,6 +101,9 @@ async function loadRecommendations(): Promise<void> {
     }
     recommendations.value = response.items
     total.value = response.total
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = totalPages.value
+    }
     strategy.value = response.strategy
     mlErrors.value = response.mlStatus.errors
   } catch (error) {
@@ -106,6 +116,22 @@ async function loadRecommendations(): Promise<void> {
     if (requestId === recommendationRequestId) {
       loading.value = false
     }
+  }
+}
+
+async function refreshRecommendations(): Promise<void> {
+  currentPage.value = 1
+  await loadRecommendations()
+}
+
+async function changePage(page: number): Promise<void> {
+  const nextPage = Math.max(1, Math.min(totalPages.value, page))
+  if (nextPage === currentPage.value) {
+    return
+  }
+  currentPage.value = nextPage
+  if (recommendations.value.length < nextPage * pageSize.value && recommendations.value.length < total.value) {
+    await loadRecommendations()
   }
 }
 
@@ -187,6 +213,27 @@ async function toggleModalFavorite(paperId: number, nextValue: boolean): Promise
 function formatScore(value: number | null): string {
   return value === null ? 'н/д' : formatPercent(value)
 }
+
+function keywordLabels(value: unknown, maxItems = 6): string[] {
+  if (!value) {
+    return []
+  }
+  const source = Array.isArray(value) ? value : []
+  return source
+    .map((item) => {
+      if (typeof item === 'string') {
+        return item
+      }
+      if (item && typeof item === 'object') {
+        const record = item as Record<string, unknown>
+        const candidate = record.keyword ?? record.value ?? record.text ?? record.label
+        return typeof candidate === 'string' ? candidate : null
+      }
+      return null
+    })
+    .filter((item): item is string => item !== null && item.length > 0)
+    .slice(0, maxItems)
+}
 </script>
 
 <template>
@@ -219,7 +266,7 @@ function formatScore(value: number | null): string {
           <input v-model="excludeFavorites" class="form-check-input" type="checkbox" />
           <span class="form-check-label">Исключать избранное</span>
         </label>
-        <button class="btn btn-primary" type="button" :disabled="loading" @click="loadRecommendations">
+        <button class="btn btn-primary" type="button" :disabled="loading" @click="refreshRecommendations">
           {{ loading ? 'Загрузка...' : 'Показать рекомендации' }}
         </button>
       </div>
@@ -247,11 +294,25 @@ function formatScore(value: number | null): string {
       </div>
 
       <div v-else class="recommendation-list">
-        <article v-for="item in recommendations" :key="item.paper.id" class="recommendation-item">
+        <article v-for="item in pageItems" :key="item.paper.id" class="recommendation-item">
           <div class="recommendation-item__main">
-            <button class="link-button recommendation-item__title" type="button" @click="openPaper(item.paper.id)">
-              {{ item.paper.title }}
-            </button>
+            <header class="paper-preview-header">
+              <button class="link-button recommendation-item__title" type="button" @click="openPaper(item.paper.id)">
+                {{ item.paper.title }}
+              </button>
+              <button
+                class="btn btn-sm paper-preview-favorite"
+                :class="item.paper.isFavorite ? 'btn-outline-danger' : 'btn-outline-primary'"
+                type="button"
+                :disabled="favoriteBusyId === item.paper.id"
+                @click="toggleFavorite(item.paper.id, !item.paper.isFavorite)"
+              >
+                {{ favoriteBusyId === item.paper.id ? 'Сохранение...' : item.paper.isFavorite ? 'Удалить из избранного' : 'В избранное' }}
+              </button>
+            </header>
+            <div v-if="keywordLabels(item.paper.extractedKeywords).length > 0" class="paper-keyword-list">
+              <span v-for="keyword in keywordLabels(item.paper.extractedKeywords)" :key="keyword">{{ keyword }}</span>
+            </div>
             <p>
               {{ item.paper.publicationDate ?? item.paper.publicationYear ?? 'н/д' }}
               <span v-if="item.paper.authors"> · {{ item.paper.authors }}</span>
@@ -261,7 +322,7 @@ function formatScore(value: number | null): string {
 
           <div class="recommendation-score">
             <strong>{{ formatScore(item.score) }}</strong>
-            <span>итоговый score</span>
+            <span>релевантность</span>
           </div>
 
           <dl class="score-breakdown">
@@ -283,24 +344,25 @@ function formatScore(value: number | null): string {
             </div>
             <div>
               <dt>Цитирования</dt>
-              <dd>{{ formatScore(item.scoreDetails.citationScore) }}</dd>
+              <dd>{{ formatScore(item.scoreDetails.citationScore) }} | {{ formatInteger(item.paper.citedBy) }}</dd>
             </div>
           </dl>
 
           <div class="recommendation-item__actions">
-            <span>Цитирований: {{ formatInteger(item.paper.citedBy) }}</span>
-            <button
-              class="btn btn-sm"
-              :class="item.paper.isFavorite ? 'btn-outline-danger' : 'btn-outline-primary'"
-              type="button"
-              :disabled="favoriteBusyId === item.paper.id"
-              @click="toggleFavorite(item.paper.id, !item.paper.isFavorite)"
-            >
-              {{ favoriteBusyId === item.paper.id ? 'Сохранение...' : item.paper.isFavorite ? 'Удалить из избранного' : 'В избранное' }}
-            </button>
+            <span>Цитирования | {{ formatInteger(item.paper.citedBy) }}</span>
           </div>
         </article>
       </div>
+
+      <nav v-if="recommendations.length > 0" class="user-pagination" aria-label="Пагинация рекомендаций">
+        <button class="btn btn-light border btn-sm" type="button" :disabled="currentPage <= 1 || loading" @click="changePage(currentPage - 1)">
+          Назад
+        </button>
+        <span>Страница {{ currentPage }} из {{ totalPages }}</span>
+        <button class="btn btn-light border btn-sm" type="button" :disabled="currentPage >= totalPages || loading" @click="changePage(currentPage + 1)">
+          Вперед
+        </button>
+      </nav>
     </section>
 
     <PaperMetadataModal
