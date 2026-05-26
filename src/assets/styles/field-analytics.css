@@ -7,9 +7,7 @@
 
 .analytics-filters {
   display: grid;
-  grid-template-columns: minmax(260px, 1.7fr) repeat(4, minmax(150px, 1fr)) auto;
-  gap: 0.85rem;
-  align-items: end;
+  gap: 1rem;
   border: 1px solid var(--sc-border);
   border-radius: 0.5rem;
   background: var(--sc-surface);
@@ -17,8 +15,35 @@
   padding: 1rem;
 }
 
+.analytics-filters__row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.7fr) repeat(4, minmax(150px, 1fr)) auto;
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.analytics-filters__row--flags {
+  grid-template-columns: 1fr;
+}
+
 .analytics-filters__field {
   min-width: 0;
+}
+
+.analytics-filter-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--sc-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.analytics-filter-check .form-check-input {
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 .analytics-filters__action {
@@ -259,8 +284,12 @@
 }
 
 @media (max-width: 1199.98px) {
-  .analytics-filters {
+  .analytics-filters__row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .analytics-filters__row--flags {
+    grid-template-columns: 1fr;
   }
 
   .analytics-filters__action {
@@ -273,7 +302,7 @@
 }
 
 @media (max-width: 767.98px) {
-  .analytics-filters,
+  .analytics-filters__row,
   .analytics-kpi,
   .subfield-small-multiples {
     grid-template-columns: 1fr;

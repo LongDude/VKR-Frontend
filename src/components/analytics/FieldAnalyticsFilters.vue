@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+
 import type {
   AnalyticsField,
   ComparisonWindowMonths,
@@ -20,6 +22,11 @@ const emit = defineEmits<{
 
 const comparisonOptions: ComparisonWindowMonths[] = [6, 12, 24]
 const movingAverageOptions: MovingAverageMonths[] = [1, 2, 3]
+const hideEmptyAreas = ref(false)
+
+const visibleFields = computed(() =>
+  hideEmptyAreas.value ? props.fields.filter((field) => (field.recent12mPapers ?? 0) > 0) : props.fields,
+)
 
 function patchValue(patch: Partial<FieldAnalyticsQuery>): void {
   emit('update:value', {
@@ -42,84 +49,104 @@ function updateField(value: string): void {
   const fieldId = Number(value)
   patchValue({ fieldId: Number.isFinite(fieldId) && fieldId > 0 ? fieldId : null })
 }
+
+watch(hideEmptyAreas, (enabled) => {
+  if (!enabled) {
+    return
+  }
+
+  const selectedFieldIsVisible = visibleFields.value.some((field) => field.id === props.value.fieldId)
+  if (!selectedFieldIsVisible) {
+    updateField(String(visibleFields.value[0]?.id ?? ''))
+  }
+})
 </script>
 
 <template>
   <section class="analytics-filters">
-    <div>
-      <label class="form-label" for="field-select">Научное направление (Field)</label>
-      <select
-        id="field-select"
-        class="form-select"
-        :value="value.fieldId ?? ''"
-        :disabled="loading || fields.length === 0"
-        @change="updateField(($event.target as HTMLSelectElement).value)"
-      >
-        <option value="">Выберите Field</option>
-        <option v-for="field in fields" :key="field.id" :value="field.id">
-          {{ field.name }} · {{ formatCompact(field.recent12mPapers ?? 0) }}
-        </option>
-      </select>
+    <div class="analytics-filters__row">
+      <div class="analytics-filters__field">
+        <label class="form-label" for="field-select">Научное направление (Field)</label>
+        <select
+          id="field-select"
+          class="form-select"
+          :value="value.fieldId ?? ''"
+          :disabled="loading || visibleFields.length === 0"
+          @change="updateField(($event.target as HTMLSelectElement).value)"
+        >
+          <option value="">Выберите Field</option>
+          <option v-for="field in visibleFields" :key="field.id" :value="field.id">
+            {{ field.name }} · {{ formatCompact(field.recent12mPapers ?? 0) }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label" for="period-start">Начало периода</label>
+        <input
+          id="period-start"
+          class="form-control"
+          type="month"
+          :value="value.periodStart"
+          :disabled="loading"
+          @input="patchValue({ periodStart: ($event.target as HTMLInputElement).value })"
+        />
+      </div>
+
+      <div>
+        <label class="form-label" for="period-end">Конец периода</label>
+        <input
+          id="period-end"
+          class="form-control"
+          type="month"
+          :value="value.periodEnd"
+          :disabled="loading"
+          @input="patchValue({ periodEnd: ($event.target as HTMLInputElement).value })"
+        />
+      </div>
+
+      <div>
+        <label class="form-label" for="comparison-window">Окно сравнения</label>
+        <select
+          id="comparison-window"
+          class="form-select"
+          :value="value.comparisonWindowMonths"
+          :disabled="loading"
+          @change="patchValue({ comparisonWindowMonths: toComparisonWindow(($event.target as HTMLSelectElement).value) })"
+        >
+          <option v-for="option in comparisonOptions" :key="option" :value="option">
+            {{ option }} мес.
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label" for="moving-average">Скользящее среднее</label>
+        <select
+          id="moving-average"
+          class="form-select"
+          :value="value.movingAverageMonths"
+          :disabled="loading"
+          @change="patchValue({ movingAverageMonths: toMovingAverage(($event.target as HTMLSelectElement).value) })"
+        >
+          <option v-for="option in movingAverageOptions" :key="option" :value="option">
+            {{ option }} мес.
+          </option>
+        </select>
+      </div>
+
+      <div class="analytics-filters__action">
+        <button class="btn btn-primary" type="button" :disabled="loading || value.fieldId === null" @click="emit('refresh')">
+          Обновить
+        </button>
+      </div>
     </div>
 
-    <div>
-      <label class="form-label" for="period-start">Начало периода</label>
-      <input
-        id="period-start"
-        class="form-control"
-        type="month"
-        :value="value.periodStart"
-        :disabled="loading"
-        @input="patchValue({ periodStart: ($event.target as HTMLInputElement).value })"
-      />
-    </div>
-
-    <div>
-      <label class="form-label" for="period-end">Конец периода</label>
-      <input
-        id="period-end"
-        class="form-control"
-        type="month"
-        :value="value.periodEnd"
-        :disabled="loading"
-        @input="patchValue({ periodEnd: ($event.target as HTMLInputElement).value })"
-      />
-    </div>
-
-    <div>
-      <label class="form-label" for="comparison-window">Окно сравнения</label>
-      <select
-        id="comparison-window"
-        class="form-select"
-        :value="value.comparisonWindowMonths"
-        :disabled="loading"
-        @change="patchValue({ comparisonWindowMonths: toComparisonWindow(($event.target as HTMLSelectElement).value) })"
-      >
-        <option v-for="option in comparisonOptions" :key="option" :value="option">
-          {{ option }} мес.
-        </option>
-      </select>
-    </div>
-
-    <div>
-      <label class="form-label" for="moving-average">Скользящее среднее</label>
-      <select
-        id="moving-average"
-        class="form-select"
-        :value="value.movingAverageMonths"
-        :disabled="loading"
-        @change="patchValue({ movingAverageMonths: toMovingAverage(($event.target as HTMLSelectElement).value) })"
-      >
-        <option v-for="option in movingAverageOptions" :key="option" :value="option">
-          {{ option }} мес.
-        </option>
-      </select>
-    </div>
-
-    <div class="analytics-filters__action">
-      <button class="btn btn-primary" type="button" :disabled="loading || value.fieldId === null" @click="emit('refresh')">
-        Обновить
-      </button>
+    <div class="analytics-filters__row analytics-filters__row--flags">
+      <label class="analytics-filter-check">
+        <input v-model="hideEmptyAreas" class="form-check-input" type="checkbox" />
+        <span>Скрыть области без данных</span>
+      </label>
     </div>
   </section>
 </template>
