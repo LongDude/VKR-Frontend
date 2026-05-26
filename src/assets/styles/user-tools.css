@@ -6,6 +6,10 @@
   flex-wrap: wrap;
 }
 
+.user-tools-page .profile-details {
+  grid-template-columns: 1fr;
+}
+
 .user-section-header h2,
 .tag-cloud-panel__header h2 {
   margin: 0;
@@ -47,10 +51,69 @@
   font-weight: 800;
 }
 
+.tag-cloud-search__query,
 .tag-cloud-add {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) auto;
-  gap: 0.8rem;
+  gap: 0.4rem;
+}
+
+.tag-cloud-search__query {
+  position: relative;
+}
+
+.tag-search-options {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  display: grid;
+  max-height: 19rem;
+  overflow: hidden;
+  border: 1px solid var(--sc-border);
+  border-radius: 0.5rem;
+  background: #ffffff;
+  box-shadow: 0 16px 38px rgba(23, 33, 43, 0.16);
+}
+
+.tag-search-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid var(--sc-border);
+  background: #ffffff;
+  color: var(--sc-text);
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+}
+
+.tag-search-option:last-child {
+  border-bottom: 0;
+}
+
+.tag-search-option:hover,
+.tag-search-option:focus {
+  background: #eef5ff;
+}
+
+.tag-search-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-search-option strong {
+  color: var(--sc-muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.tag-search-options__empty {
+  color: var(--sc-muted);
+  padding: 0.6rem 0.7rem;
+  font-size: 0.9rem;
 }
 
 .tag-cloud-groups {
@@ -116,6 +179,23 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
   align-items: end;
+}
+
+.user-form-vertical {
+  display: grid;
+  max-width: 34rem;
+  gap: 0.9rem;
+}
+
+.user-form-vertical .form-label {
+  margin: 0;
+  color: var(--sc-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.profile-details .form-control {
+  max-width: 28rem;
 }
 
 .user-form-actions {

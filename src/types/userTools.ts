@@ -7,6 +7,7 @@ export interface TaxonomyTag {
   id: number
   name: string
   type: TaxonomyTagType
+  papersCount?: number
   createdAt?: string | null
 }
 

@@ -175,16 +175,18 @@ onMounted(() => {
 
       <dl class="profile-details">
         <div>
-          <dt>ID пользователя</dt>
-          <dd>{{ user?.id ?? 'Не указан' }}</dd>
-        </div>
-        <div>
           <dt>Email</dt>
-          <dd>{{ user?.email ?? 'Не указан' }}</dd>
+          <dd v-if="!editOpen">{{ user?.email ?? 'Не указан' }}</dd>
+          <dd v-else>
+            <input v-model="editForm.email" class="form-control" type="email" autocomplete="email" required />
+          </dd>
         </div>
         <div>
           <dt>Имя</dt>
-          <dd>{{ user?.name || 'Не указано' }}</dd>
+          <dd v-if="!editOpen">{{ user?.name || 'Не указано' }}</dd>
+          <dd v-else>
+            <input v-model="editForm.name" class="form-control" type="text" autocomplete="name" />
+          </dd>
         </div>
         <div>
           <dt>Роли</dt>
@@ -192,15 +194,7 @@ onMounted(() => {
         </div>
       </dl>
 
-      <form v-if="editOpen" class="user-form-grid" @submit.prevent="saveProfile">
-        <label class="form-label">
-          Имя
-          <input v-model="editForm.name" class="form-control" type="text" autocomplete="name" />
-        </label>
-        <label class="form-label">
-          Email
-          <input v-model="editForm.email" class="form-control" type="email" autocomplete="email" required />
-        </label>
+      <form v-if="editOpen" @submit.prevent="saveProfile">
         <div class="user-form-actions">
           <button class="btn btn-primary" type="submit" :disabled="profileBusy">
             {{ profileBusy ? 'Сохранение...' : 'Сохранить' }}
@@ -219,7 +213,7 @@ onMounted(() => {
       <header class="user-section-header">
         <h2>Изменение пароля</h2>
       </header>
-      <form class="user-form-grid" @submit.prevent="savePassword">
+      <form class="user-form-vertical" @submit.prevent="savePassword">
         <label class="form-label">
           Текущий пароль
           <input v-model="passwordForm.currentPassword" class="form-control" type="password" autocomplete="current-password" required />

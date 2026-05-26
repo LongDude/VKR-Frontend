@@ -31,7 +31,7 @@ export const userToolsApi = {
     return request<TrackedResponse>('/profile/tracked')
   },
 
-  trackedOptions(type: TaxonomyTagType, query: string, limit = 20): Promise<TrackedOptionsResponse> {
+  trackedOptions(type: TaxonomyTagType, query: string, limit = 10): Promise<TrackedOptionsResponse> {
     const params = new URLSearchParams()
     appendIfPresent(params, 'type', type)
     appendIfPresent(params, 'query', query)
