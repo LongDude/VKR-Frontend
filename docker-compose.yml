@@ -16,6 +16,11 @@ services:
     restart: unless-stopped
     networks:
       - vkr-inner-network
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 1G
 
 volumes:
   frontend_node_modules:
