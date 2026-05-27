@@ -1,0 +1,103 @@
+.admin-page {
+  --coverage-none: #ffffff;
+  --coverage-partial: #f8df8d;
+  --coverage-full: #8fd2a4;
+}
+
+.admin-period-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.admin-period-form .form-label {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--sc-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.admin-coverage-panel__body {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-coverage-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-coverage-table {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: separate;
+  border-spacing: 0.35rem;
+}
+
+.admin-coverage-table th {
+  color: var(--sc-muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.admin-coverage-table tbody th {
+  width: 4.5rem;
+  text-align: right;
+}
+
+.admin-coverage-table td {
+  min-width: 4.75rem;
+}
+
+.admin-coverage-cell {
+  display: grid;
+  min-height: 2.15rem;
+  place-items: center;
+  border: 1px solid var(--sc-border);
+  border-radius: 0.45rem;
+  color: var(--sc-text);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.admin-coverage-cell--none {
+  background: var(--coverage-none);
+}
+
+.admin-coverage-cell--partial {
+  border-color: #d7aa32;
+  background: var(--coverage-partial);
+}
+
+.admin-coverage-cell--full {
+  border-color: #4d9d67;
+  background: var(--coverage-full);
+}
+
+.admin-coverage-cell--outside {
+  border-style: dashed;
+  background: transparent;
+  opacity: 0.35;
+}
+
+.admin-coverage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--sc-muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+@media (max-width: 767.98px) {
+  .admin-period-form,
+  .admin-period-form .btn {
+    width: 100%;
+  }
+}

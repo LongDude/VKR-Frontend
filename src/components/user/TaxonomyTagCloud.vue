@@ -16,6 +16,8 @@ const props = defineProps<{
   busy?: boolean
   title?: string
   hint?: string
+  allowedTypes?: TaxonomyTagType[]
+  defaultType?: TaxonomyTagType
 }>()
 
 const emit = defineEmits<{
@@ -23,7 +25,7 @@ const emit = defineEmits<{
   remove: [type: TaxonomyTagType, id: number]
 }>()
 
-const type = ref<TaxonomyTagType>('topic')
+const type = ref<TaxonomyTagType>(props.defaultType ?? 'topic')
 const query = ref('')
 const options = ref<TaxonomyTag[]>([])
 const loadingOptions = ref(false)
@@ -32,7 +34,7 @@ const dropdownOpen = ref(false)
 let searchRequestId = 0
 let searchDebounceId: ReturnType<typeof setTimeout> | null = null
 
-const typeOptions: Array<{ value: TaxonomyTagType; label: string; group: TaxonomyGroupKey }> = [
+const allTypeOptions: Array<{ value: TaxonomyTagType; label: string; group: TaxonomyGroupKey }> = [
   { value: 'domain', label: 'Домен', group: 'domains' },
   { value: 'field', label: 'Область', group: 'fields' },
   { value: 'subfield', label: 'Подобласть', group: 'subfields' },
@@ -46,10 +48,16 @@ const groupLabels: Record<TaxonomyGroupKey, string> = {
   topics: 'Темы',
 }
 
-const groupKeys = computed(() => Object.keys(groupLabels) as TaxonomyGroupKey[])
+const typeOptions = computed(() => {
+  const allowed = props.allowedTypes ?? allTypeOptions.map((item) => item.value)
+
+  return allTypeOptions.filter((item) => allowed.includes(item.value))
+})
+
+const groupKeys = computed(() => Array.from(new Set(typeOptions.value.map((item) => item.group))))
 
 function groupForType(value: TaxonomyTagType): TaxonomyGroupKey {
-  return typeOptions.find((item) => item.value === value)?.group ?? 'topics'
+  return allTypeOptions.find((item) => item.value === value)?.group ?? 'topics'
 }
 
 async function searchOptions(): Promise<void> {
@@ -124,6 +132,17 @@ function openDropdown(): void {
 watch([type, query], () => {
   scheduleSearch()
 })
+
+watch(
+  typeOptions,
+  (items) => {
+    const firstType = items[0]?.value
+    if (firstType !== undefined && !items.some((item) => item.value === type.value)) {
+      type.value = firstType
+    }
+  },
+  { immediate: true },
+)
 
 watch(
   () => props.groups,
