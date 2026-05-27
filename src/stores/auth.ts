@@ -15,6 +15,28 @@ const loading = ref(false)
 let currentUserRequest: Promise<AuthUser | null> | null = null
 
 const isAuthenticated = computed(() => user.value !== null)
+const primaryRole = computed(() => {
+  if (user.value?.role) {
+    return user.value.role
+  }
+
+  if (user.value?.roles.includes('ROLE_ADMIN')) {
+    return 'ROLE_ADMIN'
+  }
+
+  return user.value?.roles[0] ?? 'ROLE_USER'
+})
+const roleLabel = computed(() => {
+  switch (primaryRole.value) {
+    case 'ROLE_ADMIN':
+      return 'Администратор'
+    case 'ROLE_USER':
+      return 'Исследователь'
+    default:
+      return primaryRole.value
+  }
+})
+const isAdmin = computed(() => primaryRole.value === 'ROLE_ADMIN' || user.value?.roles.includes('ROLE_ADMIN') === true)
 
 const displayName = computed(() => {
   const name = user.value?.name?.trim()
@@ -136,6 +158,9 @@ export function useAuthStore() {
     initialized: readonly(initialized),
     loading: readonly(loading),
     isAuthenticated,
+    primaryRole,
+    roleLabel,
+    isAdmin,
     displayName,
     initials,
     loadCurrentUser,

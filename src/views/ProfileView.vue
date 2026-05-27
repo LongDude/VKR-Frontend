@@ -11,6 +11,7 @@ const auth = useAuthStore()
 const user = auth.user
 const displayName = auth.displayName
 const initials = auth.initials
+const roleLabel = auth.roleLabel
 
 const editOpen = ref(false)
 const profileBusy = ref(false)
@@ -41,7 +42,6 @@ const tracked = ref<TaxonomyTagGroups>({
   topics: [],
 })
 
-const roles = computed(() => user.value?.roles.join(', ') || 'ROLE_USER')
 const hasTrackedTags = computed(() => Object.values(tracked.value).some((items) => items.length > 0))
 
 function openEdit(): void {
@@ -191,8 +191,8 @@ onMounted(() => {
           </dd>
         </div>
         <div>
-          <dt>Роли</dt>
-          <dd>{{ roles }}</dd>
+          <dt>Роль</dt>
+          <dd>{{ roleLabel }}</dd>
         </div>
       </dl>
 

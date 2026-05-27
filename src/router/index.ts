@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteLocationNormalized, type RouteRecordRaw } from 'vue-router'
 
 import MainLayout from '@/layouts/MainLayout.vue'
+import AdminPanelView from '@/views/AdminPanelView.vue'
 import DirectionsView from '@/views/DirectionsView.vue'
 import FavoritesView from '@/views/FavoritesView.vue'
 import LoginView from '@/views/LoginView.vue'
@@ -80,6 +81,15 @@ const routes: RouteRecordRaw[] = [
           title: 'Личный кабинет',
         },
       },
+      {
+        path: 'admin',
+        name: 'admin-panel',
+        component: AdminPanelView,
+        meta: {
+          requiresAdmin: true,
+          title: 'Панель управления',
+        },
+      },
     ],
   },
 ]
@@ -111,6 +121,7 @@ router.beforeEach(async (to) => {
   await auth.loadCurrentUser()
 
   const requiresAuth = to.matched.some((route) => route.meta.requiresAuth === true)
+  const requiresAdmin = to.matched.some((route) => route.meta.requiresAdmin === true)
 
   if (requiresAuth && !auth.isAuthenticated.value) {
     return {
@@ -118,6 +129,12 @@ router.beforeEach(async (to) => {
       query: {
         redirect: to.fullPath,
       },
+    }
+  }
+
+  if (requiresAdmin && !auth.isAdmin.value) {
+    return {
+      name: 'directions',
     }
   }
 

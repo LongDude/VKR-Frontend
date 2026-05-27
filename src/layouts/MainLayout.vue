@@ -9,14 +9,20 @@ const auth = useAuthStore()
 const user = auth.user
 const displayName = auth.displayName
 const initials = auth.initials
+const isAdmin = auth.isAdmin
 const isLoggingOut = ref(false)
 
-const navigation = [
+const baseNavigation = [
   { label: 'Научные направления', to: { name: 'directions' } },
   { label: 'Предметная область', to: { name: 'subject-area' } },
   { label: 'Рекомендации', to: { name: 'recommendations' } },
   { label: 'Избранное', to: { name: 'favorites' } },
 ]
+
+const navigation = computed(() => [
+  ...baseNavigation,
+  ...(isAdmin.value ? [{ label: 'Панель управления', to: { name: 'admin-panel' } }] : []),
+])
 
 const userEmail = computed(() => user.value?.email ?? 'Активная сессия')
 
