@@ -88,10 +88,10 @@ function cellTitle(cell: DataCoverageCell): string {
         </table>
       </div>
 
-      <div class="admin-coverage-actions">
+      <!-- <div class="admin-coverage-actions">
         <span>{{ requestSummary }}</span>
         <button class="btn btn-light border" type="button" disabled>Отправка в Worker не реализована</button>
-      </div>
+      </div> -->
     </div>
     <div v-else class="analytics-empty">
       <p>Выберите темы для расчета покрытия.</p>
