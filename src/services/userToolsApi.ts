@@ -31,11 +31,19 @@ export const userToolsApi = {
     return request<TrackedResponse>('/profile/tracked')
   },
 
-  trackedOptions(type: TaxonomyTagType, query: string, limit = 10): Promise<TrackedOptionsResponse> {
+  trackedOptions(
+    type: TaxonomyTagType,
+    query: string,
+    limit = 10,
+    parents: Partial<SelectedTags> = {},
+  ): Promise<TrackedOptionsResponse> {
     const params = new URLSearchParams()
     appendIfPresent(params, 'type', type)
     appendIfPresent(params, 'query', query)
     appendIfPresent(params, 'limit', limit)
+    appendIfPresent(params, 'domainIds', parents.domains?.join(','))
+    appendIfPresent(params, 'fieldIds', parents.fields?.join(','))
+    appendIfPresent(params, 'subfieldIds', parents.subfields?.join(','))
 
     return request<TrackedOptionsResponse>(`/profile/tracked/options?${params.toString()}`)
   },
