@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import LoadingTimer from '@/components/LoadingTimer.vue'
 import PaperMetadataModal from '@/components/papers/PaperMetadataModal.vue'
+import { technicalError } from '@/i18n'
 import { userToolsApi } from '@/services/userToolsApi'
 import type { PaperMetadata } from '@/types/topicAnalytics'
 import type { PaperSummary } from '@/types/userTools'
 import { formatInteger } from '@/utils/fieldAnalyticsFormatters'
 
 const papers = ref<PaperSummary[]>([])
+const { t } = useI18n()
 const total = ref(0)
 const loading = ref(false)
 const errorMessage = ref<string | null>(null)
@@ -44,7 +47,7 @@ async function loadFavorites(): Promise<void> {
     }
   } catch (error) {
     if (requestId === listRequestId) {
-      errorMessage.value = error instanceof Error ? error.message : 'Не удалось загрузить избранное.'
+      errorMessage.value = technicalError(t('favorites.loadError'), error)
     }
   } finally {
     if (requestId === listRequestId) {
@@ -76,7 +79,7 @@ async function openPaper(paperId: number): Promise<void> {
     }
   } catch (error) {
     if (requestId === paperRequestId) {
-      modalError.value = error instanceof Error ? error.message : 'Не удалось загрузить статью.'
+      modalError.value = technicalError(t('paper.loadError'), error)
     }
   } finally {
     if (requestId === paperRequestId) {
@@ -100,7 +103,7 @@ async function removeFavorite(paperId: number): Promise<void> {
       }
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Не удалось удалить статью из избранного.'
+    errorMessage.value = technicalError(t('favorites.removeError'), error)
   } finally {
     actionBusyId.value = null
   }
@@ -125,7 +128,7 @@ async function toggleModalFavorite(paperId: number, nextValue: boolean): Promise
       total.value = Math.max(0, total.value - 1)
     }
   } catch (error) {
-    modalError.value = error instanceof Error ? error.message : 'Не удалось обновить избранное.'
+    modalError.value = technicalError(t('favorites.updateError'), error)
   } finally {
     modalFavoriteBusy.value = false
   }
@@ -139,26 +142,26 @@ onMounted(() => {
 <template>
   <section class="page-stack user-tools-page">
     <div class="page-heading">
-      <span class="section-eyebrow">Персональная коллекция</span>
-      <h1>Избранное</h1>
-      <p>Сохраненные статьи для быстрого возврата к публикациям и обновления рекомендательного профиля.</p>
+      <span class="section-eyebrow">{{ t('favorites.eyebrow') }}</span>
+      <h1>{{ t('routes.favorites') }}</h1>
+      <p>{{ t('favorites.description') }}</p>
     </div>
 
     <div class="analytics-panel">
       <header class="analytics-panel__header">
         <div>
-          <h2>Статьи</h2>
-          <p class="user-muted">Всего сохранено: {{ formatInteger(total) }}</p>
+          <h2>{{ t('favorites.papers') }}</h2>
+          <p class="user-muted">{{ t('favorites.total', { total: formatInteger(total) }) }}</p>
         </div>
         <button class="btn btn-outline-primary" type="button" :disabled="loading" @click="loadFavorites">
-          {{ loading ? 'Загрузка...' : 'Обновить' }}
+          {{ loading ? t('common.loading') : t('common.update') }}
         </button>
       </header>
 
       <div v-if="errorMessage" class="alert alert-danger" role="alert">{{ errorMessage }}</div>
-      <LoadingTimer v-if="loading && papers.length === 0" label="Загрузка избранного..." />
-      <LoadingTimer v-else-if="loading" label="Обновление списка избранного..." compact />
-      <div v-else-if="papers.length === 0" class="analytics-empty">В избранном пока нет статей.</div>
+      <LoadingTimer v-if="loading && papers.length === 0" :label="t('favorites.loading')" />
+      <LoadingTimer v-else-if="loading" :label="t('favorites.refreshing')" compact />
+      <div v-else-if="papers.length === 0" class="analytics-empty">{{ t('favorites.empty') }}</div>
 
       <div v-else class="paper-list">
         <article v-for="paper in papers" :key="paper.id" class="paper-list-item">
@@ -167,26 +170,26 @@ onMounted(() => {
               {{ paper.title }}
             </button>
             <p>
-              {{ paper.publicationDate ?? paper.publicationYear ?? 'н/д' }}
+              {{ paper.publicationDate ?? paper.publicationYear ?? t('common.notAvailable') }}
               <span v-if="paper.authors"> · {{ paper.authors }}</span>
             </p>
           </div>
           <div class="paper-list-item__meta">
-            <span>Цитирования | {{ formatInteger(paper.citedBy) }}</span>
+            <span>{{ t('common.citations') }} | {{ formatInteger(paper.citedBy) }}</span>
             <button class="btn btn-outline-danger btn-sm" type="button" :disabled="actionBusyId === paper.id" @click="removeFavorite(paper.id)">
-              {{ actionBusyId === paper.id ? 'Удаление...' : 'Удалить' }}
+              {{ actionBusyId === paper.id ? t('favorites.removing') : t('favorites.remove') }}
             </button>
           </div>
         </article>
       </div>
 
-      <nav v-if="total > 0" class="user-pagination" aria-label="Пагинация избранного">
+      <nav v-if="total > 0" class="user-pagination" :aria-label="t('favorites.paginationAria')">
         <button class="btn btn-light border btn-sm" type="button" :disabled="currentPage <= 1 || loading" @click="changePage(currentPage - 1)">
-          Назад
+          {{ t('common.back') }}
         </button>
-        <span>Страница {{ currentPage }} из {{ totalPages }}</span>
+        <span>{{ t('common.pageOf', { current: currentPage, total: totalPages }) }}</span>
         <button class="btn btn-light border btn-sm" type="button" :disabled="currentPage >= totalPages || loading" @click="changePage(currentPage + 1)">
-          Вперед
+          {{ t('common.next') }}
         </button>
       </nav>
     </div>

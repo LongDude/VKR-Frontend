@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EChartsOption } from 'echarts'
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import EChartPanel from '@/components/analytics/EChartPanel.vue'
 import type { FieldActivity, SubfieldActivity } from '@/types/fieldAnalytics'
@@ -16,6 +17,7 @@ const props = defineProps<{
   fieldActivity: FieldActivity
   subfieldActivity: SubfieldActivity
 }>()
+const { t } = useI18n()
 
 const SUBFIELD_CHARTS_PER_PAGE = 6
 
@@ -38,7 +40,7 @@ watch(
 )
 
 const fieldOption = computed<EChartsOption>(() => buildActivityOption(
-  `Активность публикаций: ${props.fieldName}`,
+  t('analytics.charts.activityTitle', { name: props.fieldName }),
   props.fieldActivity.series.map((point) => point.period),
   props.fieldActivity.series.map((point) => point.papers),
   props.fieldActivity.series.map((point) => point.movingAverage),
@@ -47,7 +49,7 @@ const fieldOption = computed<EChartsOption>(() => buildActivityOption(
 
 function formatNullableInteger(value: unknown): string {
   if (value === null || value === undefined || value === '') {
-    return 'н/д'
+    return t('common.notAvailable')
   }
 
   return formatInteger(Number(value))
@@ -104,13 +106,13 @@ function buildActivityOption(
     },
     series: [
       {
-        name: 'Публикации',
+        name: t('common.publications'),
         type: 'bar',
         data: papers,
         barMaxWidth: 18,
       },
       {
-        name: 'Скользящее среднее',
+        name: t('analytics.charts.movingAverage'),
         type: 'line',
         data: movingAverage,
         smooth: true,
@@ -128,19 +130,19 @@ function buildActivityOption(
   <section class="analytics-panel field-activity">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Публикационная активность</span>
-        <h2>Активность публикаций по Field</h2>
+        <span class="section-eyebrow">{{ t('analytics.charts.publicationActivity') }}</span>
+        <h2>{{ t('analytics.charts.activityByField') }}</h2>
       </div>
     </div>
 
     <EChartPanel v-if="fieldActivity.series.length > 0" :option="fieldOption" height="360px" />
-    <div v-else class="analytics-empty">Нет данных за выбранный период.</div>
+    <div v-else class="analytics-empty">{{ t('analytics.charts.noPeriodData') }}</div>
 
     <div v-if="hasSubfieldCarousel" class="subfield-carousel">
       <button
         class="subfield-carousel__button"
         type="button"
-        aria-label="Previous subfields"
+        :aria-label="t('analytics.charts.previousSubfields')"
         :disabled="subfieldPage === 0"
         @click="goToSubfieldPage(subfieldPage - 1)"
       >
@@ -152,7 +154,7 @@ function buildActivityOption(
       <button
         class="subfield-carousel__button"
         type="button"
-        aria-label="Next subfields"
+        :aria-label="t('analytics.charts.nextSubfields')"
         :disabled="subfieldPage === subfieldPageCount - 1"
         @click="goToSubfieldPage(subfieldPage + 1)"
       >
@@ -166,21 +168,21 @@ function buildActivityOption(
           <h3>{{ subfield.name }}</h3>
           <dl>
             <div>
-              <dt>12 мес.</dt>
+              <dt>12 {{ t('common.monthShort') }}</dt>
               <dd>{{ formatInteger(subfield.papersLast12m) }}</dd>
             </div>
             <div>
-              <dt>Рост</dt>
+              <dt>{{ t('common.growth') }}</dt>
               <dd :class="{ 'metric-negative': (subfield.yoyGrowth ?? 0) < 0 }">
                 {{ formatOptionalSignedPercent(subfield.yoyGrowth) }}
               </dd>
             </div>
             <div>
-              <dt>Доля</dt>
+              <dt>{{ t('common.share') }}</dt>
               <dd>{{ formatPercent(subfield.shareInsideField) }}</dd>
             </div>
             <div>
-              <dt>Покрытие</dt>
+              <dt>{{ t('common.coverage') }}</dt>
               <dd>{{ formatPercent(subfield.coverage) }}</dd>
             </div>
           </dl>

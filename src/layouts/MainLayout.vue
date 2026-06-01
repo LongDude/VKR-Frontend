@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const { t } = useI18n()
 const auth = useAuthStore()
 const user = auth.user
 const displayName = auth.displayName
@@ -12,24 +14,24 @@ const initials = auth.initials
 const isAdmin = auth.isAdmin
 const isLoggingOut = ref(false)
 
-const baseNavigation = [
-  { label: 'Научные направления', to: { name: 'directions' } },
-  { label: 'Предметная область', to: { name: 'subject-area' } },
-  { label: 'Рекомендации', to: { name: 'recommendations' } },
-  { label: 'Избранное', to: { name: 'favorites' } },
-]
+const baseNavigation = computed(() => [
+  { label: t('routes.directions'), to: { name: 'directions' } },
+  { label: t('routes.subjectArea'), to: { name: 'subject-area' } },
+  { label: t('routes.recommendations'), to: { name: 'recommendations' } },
+  { label: t('routes.favorites'), to: { name: 'favorites' } },
+])
 
 const navigation = computed(() => [
-  ...baseNavigation,
+  ...baseNavigation.value,
   ...(isAdmin.value
     ? [
-        { label: 'Панель управления', to: { name: 'admin-panel' } },
-        { label: 'Пользователи', to: { name: 'admin-users' } },
+        { label: t('routes.admin'), to: { name: 'admin-panel' } },
+        { label: t('routes.users'), to: { name: 'admin-users' } },
       ]
     : []),
 ])
 
-const userEmail = computed(() => user.value?.email ?? 'Активная сессия')
+const userEmail = computed(() => user.value?.email ?? t('navigation.activeSession'))
 
 async function handleLogout(): Promise<void> {
   if (isLoggingOut.value) {
@@ -59,7 +61,7 @@ async function handleLogout(): Promise<void> {
           data-bs-target="#scinsideNavbar"
           aria-controls="scinsideNavbar"
           aria-expanded="false"
-          aria-label="Переключить навигацию"
+          :aria-label="t('navigation.toggle')"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -91,11 +93,11 @@ async function handleLogout(): Promise<void> {
                 </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
-                  <RouterLink class="dropdown-item" :to="{ name: 'profile' }">Профиль</RouterLink>
+                  <RouterLink class="dropdown-item" :to="{ name: 'profile' }">{{ t('navigation.profile') }}</RouterLink>
                 </li>
                 <li>
                   <button class="dropdown-item" type="button" :disabled="isLoggingOut" @click="handleLogout">
-                    {{ isLoggingOut ? 'Выход...' : 'Выйти' }}
+                    {{ isLoggingOut ? t('navigation.loggingOut') : t('navigation.logout') }}
                   </button>
                 </li>
               </ul>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import LoadingTimer from '@/components/LoadingTimer.vue'
 import PaperMetadataModal from '@/components/papers/PaperMetadataModal.vue'
@@ -10,20 +11,37 @@ import TopicActivityForecastChart from '@/components/topic-analytics/TopicActivi
 import TopicAnalyticsFilters from '@/components/topic-analytics/TopicAnalyticsFilters.vue'
 import TopicPassportCards from '@/components/topic-analytics/TopicPassportCards.vue'
 import TrendDecompositionRadar from '@/components/topic-analytics/TrendDecompositionRadar.vue'
-import { fieldAnalyticsApi } from '@/services/fieldAnalyticsApi'
+import { technicalError } from '@/i18n'
 import { topicAnalyticsApi } from '@/services/topicAnalyticsApi'
 import { userToolsApi } from '@/services/userToolsApi'
-import type { AnalyticsField } from '@/types/fieldAnalytics'
 import type {
+  AppliedTopicAnalyticsFilters,
+  MlStatus,
   PaperMetadata,
+  QuarterReportItem,
+  RelatedTopics,
+  RepresentativeWork,
+  TopicActivity,
+  TopicAnalyticsEntity,
   TopicAnalyticsQuery,
-  TopicDashboardResponse,
-  TopicListItem,
+  TopicPassport,
+  TopicSectionKey,
+  TrendDecomposition,
 } from '@/types/topicAnalytics'
 
-const fields = ref<AnalyticsField[]>([])
-const topics = ref<TopicListItem[]>([])
-const dashboard = ref<TopicDashboardResponse | null>(null)
+interface SectionState<T> {
+  loading: boolean
+  error: string | null
+  data: T | null
+  mlStatus: MlStatus | null
+  requestId: number
+}
+
+function sectionState<T>(): SectionState<T> {
+  return { loading: false, error: null, data: null, mlStatus: null, requestId: 0 }
+}
+
+const { t } = useI18n()
 const filters = ref<TopicAnalyticsQuery>({
   fieldId: null,
   topicId: null,
@@ -32,145 +50,91 @@ const filters = ref<TopicAnalyticsQuery>({
   comparisonWindowMonths: 12,
   forecastMonths: 6,
 })
-
-const isLoadingFields = ref(false)
-const isLoadingTopics = ref(false)
-const isLoadingDashboard = ref(false)
-const errorMessage = ref<string | null>(null)
+const topic = ref<TopicAnalyticsEntity | null>(null)
+const passport = reactive(sectionState<TopicPassport>())
+const activity = reactive(sectionState<TopicActivity>())
+const trendDecomposition = reactive(sectionState<TrendDecomposition>())
+const relatedTopics = reactive(sectionState<RelatedTopics>())
+const representativeWorks = reactive(sectionState<{ items: RepresentativeWork[] }>())
+const quarterReports = reactive(sectionState<{ items: QuarterReportItem[] }>())
+const states = [passport, activity, trendDecomposition, relatedTopics, representativeWorks, quarterReports]
+const isLoading = computed(() => states.some((state) => state.loading))
+const hasData = computed(() => states.some((state) => state.data !== null))
+const topicName = computed(() => topic.value?.name ?? t('taxonomy.topic'))
 
 const paperModalOpen = ref(false)
 const paperLoading = ref(false)
 const paperError = ref<string | null>(null)
 const paperFavoriteBusy = ref(false)
 const selectedPaper = ref<PaperMetadata | null>(null)
-
-let fieldsRequestId = 0
-let topicsRequestId = 0
-let dashboardRequestId = 0
 let paperRequestId = 0
 
-const isLoading = computed(() => isLoadingFields.value || isLoadingDashboard.value)
-const topicName = computed(() => dashboard.value?.topic.name ?? 'Topic')
-const mlError = computed(() => {
-  const errors = dashboard.value?.mlStatus.errors ?? []
-  return errors.length > 0 ? errors.join(' ') : null
-})
-
-async function loadFields(): Promise<void> {
-  const requestId = ++fieldsRequestId
-  isLoadingFields.value = true
-  errorMessage.value = null
-
-  try {
-    const response = await fieldAnalyticsApi.listFields(50)
-    if (requestId !== fieldsRequestId) {
-      return
-    }
-
-    fields.value = response.fields
-    const currentFieldExists = response.fields.some((field) => field.id === filters.value.fieldId)
-    const fieldId = currentFieldExists ? filters.value.fieldId : response.fields[0]?.id ?? null
-    filters.value = {
-      ...filters.value,
-      fieldId,
-      topicId: null,
-    }
-    await loadTopics(fieldId)
-  } catch (error) {
-    if (requestId === fieldsRequestId) {
-      errorMessage.value = error instanceof Error ? error.message : 'Не удалось загрузить список Field.'
-    }
-  } finally {
-    if (requestId === fieldsRequestId) {
-      isLoadingFields.value = false
-    }
+function requestPayload() {
+  return {
+    topicId: filters.value.topicId!,
+    periodStart: filters.value.periodStart || undefined,
+    periodEnd: filters.value.periodEnd || undefined,
+    comparisonWindowMonths: filters.value.comparisonWindowMonths,
+    forecastMonths: filters.value.forecastMonths,
   }
 }
 
-async function loadTopics(fieldId: number | null): Promise<void> {
-  const requestId = ++topicsRequestId
-  topics.value = []
+function syncAppliedFilters(entity: TopicAnalyticsEntity, applied: AppliedTopicAnalyticsFilters): void {
   filters.value = {
-    ...filters.value,
-    fieldId,
-    topicId: null,
-  }
-
-  if (fieldId === null) {
-    return
-  }
-
-  isLoadingTopics.value = true
-  errorMessage.value = null
-
-  try {
-    const response = await topicAnalyticsApi.listTopics(fieldId, 500)
-    if (requestId !== topicsRequestId) {
-      return
-    }
-
-    topics.value = response.topics
-    filters.value = {
-      ...filters.value,
-      topicId: response.topics[0]?.id ?? null,
-    }
-  } catch (error) {
-    if (requestId === topicsRequestId) {
-      errorMessage.value = error instanceof Error ? error.message : 'Не удалось загрузить список Topic.'
-    }
-  } finally {
-    if (requestId === topicsRequestId) {
-      isLoadingTopics.value = false
-    }
-  }
-}
-
-async function loadDashboard(): Promise<void> {
-  if (filters.value.topicId === null) {
-    dashboard.value = null
-    return
-  }
-
-  const requestId = ++dashboardRequestId
-  isLoadingDashboard.value = true
-  errorMessage.value = null
-
-  try {
-    const response = await topicAnalyticsApi.dashboard({
-      topicId: filters.value.topicId,
-      periodStart: filters.value.periodStart || undefined,
-      periodEnd: filters.value.periodEnd || undefined,
-      comparisonWindowMonths: filters.value.comparisonWindowMonths,
-      forecastMonths: filters.value.forecastMonths,
-    })
-    if (requestId !== dashboardRequestId) {
-      return
-    }
-
-    dashboard.value = response
-    syncAppliedFilters(response)
-  } catch (error) {
-    if (requestId === dashboardRequestId) {
-      errorMessage.value = error instanceof Error ? error.message : 'Не удалось загрузить аналитику Topic.'
-      dashboard.value = null
-    }
-  } finally {
-    if (requestId === dashboardRequestId) {
-      isLoadingDashboard.value = false
-    }
-  }
-}
-
-function syncAppliedFilters(response: TopicDashboardResponse): void {
-  const applied = response.filters
-  filters.value = {
-    fieldId: response.topic.field?.id ?? filters.value.fieldId,
-    topicId: response.topic.id,
+    fieldId: entity.field?.id ?? filters.value.fieldId,
+    topicId: entity.id,
     periodStart: applied.periodStart,
     periodEnd: applied.periodEnd,
     comparisonWindowMonths: applied.comparisonWindowMonths,
     forecastMonths: applied.forecastMonths,
   }
+}
+
+async function loadSection<T>(state: SectionState<T>, section: TopicSectionKey): Promise<void> {
+  if (filters.value.topicId === null) {
+    return
+  }
+
+  const requestId = ++state.requestId
+  state.loading = true
+  state.error = null
+  try {
+    const response = await topicAnalyticsApi.section<T>(section, requestPayload())
+    if (requestId !== state.requestId) {
+      return
+    }
+    state.data = response.data
+    state.mlStatus = response.mlStatus
+    topic.value = response.topic
+    syncAppliedFilters(response.topic, response.filters)
+  } catch (error) {
+    if (requestId === state.requestId) {
+      state.error = technicalError(t('analytics.sectionLoadError'), error)
+    }
+  } finally {
+    if (requestId === state.requestId) {
+      state.loading = false
+    }
+  }
+}
+
+function mlError(state: SectionState<unknown>): string | null {
+  const errors = state.mlStatus?.errors ?? []
+  return errors.length === 0 ? null : errors.join(' ')
+}
+
+function loadDashboard(): void {
+  if (filters.value.topicId === null) {
+    return
+  }
+  void Promise.all([
+    loadSection(passport, 'passport'),
+    loadSection(activity, 'activity'),
+    loadSection(trendDecomposition, 'trend-decomposition'),
+    loadSection(relatedTopics, 'related-topics'),
+    loadSection(representativeWorks, 'representative-works'),
+    loadSection(quarterReports, 'quarter-reports'),
+  ])
 }
 
 async function openPaper(paperId: number): Promise<void> {
@@ -187,7 +151,7 @@ async function openPaper(paperId: number): Promise<void> {
     }
   } catch (error) {
     if (requestId === paperRequestId) {
-      paperError.value = error instanceof Error ? error.message : 'Не удалось загрузить метаданные статьи.'
+      paperError.value = technicalError(t('paper.loadError'), error)
     }
   } finally {
     if (requestId === paperRequestId) {
@@ -212,72 +176,64 @@ async function togglePaperFavorite(paperId: number, nextValue: boolean): Promise
       ? await userToolsApi.addFavorite(paperId)
       : await userToolsApi.removeFavorite(paperId)
     if (selectedPaper.value?.id === paperId) {
-      selectedPaper.value = {
-        ...selectedPaper.value,
-        isFavorite: response.isFavorite,
-      }
+      selectedPaper.value = { ...selectedPaper.value, isFavorite: response.isFavorite }
     }
   } catch (error) {
-    paperError.value = error instanceof Error ? error.message : 'Не удалось обновить избранное.'
+    paperError.value = technicalError(t('favorites.updateError'), error)
   } finally {
     paperFavoriteBusy.value = false
   }
 }
-
-onMounted(() => {
-  void loadFields()
-})
 </script>
 
 <template>
   <section class="page-stack topic-analytics-page">
     <div class="page-heading">
-      <span class="section-eyebrow">Аналитика предметной области</span>
-      <h1>Предметная область</h1>
-      <p>
-        Паспорт выбранной темы, динамику публикаций внутри Subfield,
-        прогноз активности и квартальные отчеты.
-      </p>
+      <span class="section-eyebrow">{{ t('analytics.subjectArea') }}</span>
+      <h1>{{ t('analytics.subjectAreaTitle') }}</h1>
+      <p>{{ t('analytics.subjectAreaDescription') }}</p>
     </div>
 
-    <TopicAnalyticsFilters
-      v-model:value="filters"
-      :fields="fields"
-      :topics="topics"
-      :loading="isLoading"
-      :loading-topics="isLoadingTopics"
-      @field-change="loadTopics"
-      @refresh="loadDashboard"
-    />
+    <TopicAnalyticsFilters v-model:value="filters" :loading="isLoading" @refresh="loadDashboard" />
 
-    <div v-if="errorMessage !== null" class="alert alert-danger analytics-alert" role="alert">
-      {{ errorMessage }}
-    </div>
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="passport.loading" :label="t('analytics.sections.passport')" compact />
+      <div v-if="passport.error" class="alert alert-danger analytics-alert" role="alert">{{ passport.error }}</div>
+      <TopicPassportCards v-if="passport.data" :kpi="passport.data" :filters="filters" />
+    </section>
 
-    <LoadingTimer
-      v-if="(isLoading || isLoadingTopics) && dashboard === null"
-      :label="isLoadingFields ? 'Сбор статистики публикаций...' : isLoadingTopics ? 'Загрузка списка предметных областей...' : 'Загрузка аналитики предметной области...'"
-    />
-    <LoadingTimer v-else-if="isLoadingDashboard || isLoadingTopics" label="Обновление данных предметной области..." compact />
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="activity.loading" :label="t('analytics.sections.activity')" compact />
+      <div v-if="activity.error" class="alert alert-danger analytics-alert" role="alert">{{ activity.error }}</div>
+      <TopicActivityForecastChart v-if="activity.data" :topic-name="topicName" :activity="activity.data" :ml-error="mlError(activity)" />
+    </section>
 
-    <template v-if="dashboard !== null">
-      <div v-if="!dashboard.mlStatus.available && mlError" class="alert alert-warning analytics-alert" role="alert">
-        MLService недоступен: {{ mlError }}
-      </div>
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="trendDecomposition.loading" :label="t('analytics.sections.trendDecomposition')" compact />
+      <div v-if="trendDecomposition.error" class="alert alert-danger analytics-alert" role="alert">{{ trendDecomposition.error }}</div>
+      <TrendDecompositionRadar v-if="trendDecomposition.data" :items="trendDecomposition.data.items" :error="trendDecomposition.data.error ?? mlError(trendDecomposition)" />
+    </section>
 
-      <TopicPassportCards :kpi="dashboard.kpi" :filters="dashboard.filters" />
-      <TopicActivityForecastChart :topic-name="topicName" :activity="dashboard.activity" :ml-error="mlError" />
-      <TrendDecompositionRadar
-        :items="dashboard.trendDecomposition.items"
-        :error="dashboard.trendDecomposition.error"
-      />
-      <RelatedTopicsTable :items="dashboard.relatedTopics.items" :error="dashboard.relatedTopics.error" />
-      <RepresentativeWorksTable :items="dashboard.representativeWorks.items" @open-paper="openPaper" />
-      <QuarterReportsTimeline :items="dashboard.quarterReports.items" @open-paper="openPaper" />
-    </template>
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="relatedTopics.loading" :label="t('analytics.sections.relatedTopics')" compact />
+      <div v-if="relatedTopics.error" class="alert alert-danger analytics-alert" role="alert">{{ relatedTopics.error }}</div>
+      <RelatedTopicsTable v-if="relatedTopics.data" :items="relatedTopics.data.items" :error="relatedTopics.data.error ?? mlError(relatedTopics)" />
+    </section>
 
-    <div v-else-if="!isLoading" class="analytics-empty analytics-empty--page">
-      Выберите Field и Topic, затем нажмите «Обновить».
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="representativeWorks.loading" :label="t('analytics.sections.representativeWorks')" compact />
+      <div v-if="representativeWorks.error" class="alert alert-danger analytics-alert" role="alert">{{ representativeWorks.error }}</div>
+      <RepresentativeWorksTable v-if="representativeWorks.data" :items="representativeWorks.data.items" @open-paper="openPaper" />
+    </section>
+
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="quarterReports.loading" :label="t('analytics.sections.quarterReports')" compact />
+      <div v-if="quarterReports.error" class="alert alert-danger analytics-alert" role="alert">{{ quarterReports.error }}</div>
+      <QuarterReportsTimeline v-if="quarterReports.data" :items="quarterReports.data.items" @open-paper="openPaper" />
+    </section>
+
+    <div v-if="!hasData && !isLoading" class="analytics-empty analytics-empty--page">
+      {{ t('analytics.selectTopicPrompt') }}
     </div>
 
     <PaperMetadataModal

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 interface MetricItem {
   label: string
   value: string
@@ -22,7 +25,7 @@ defineProps<{
       <p>{{ description }}</p>
     </div>
 
-    <div class="metric-strip" aria-label="Ключевые показатели">
+    <div class="metric-strip" :aria-label="t('placeholder.aria')">
       <div v-for="item in stats" :key="item.label" class="metric-tile">
         <span class="metric-tile__label">{{ item.label }}</span>
         <strong>{{ item.value }}</strong>
@@ -33,10 +36,10 @@ defineProps<{
     <div class="analytics-panel">
       <div class="analytics-panel__header">
         <div>
-          <span class="section-eyebrow">Заготовка аналитики</span>
-          <h2>Динамика исследовательского интереса</h2>
+          <span class="section-eyebrow">{{ t('placeholder.eyebrow') }}</span>
+          <h2>{{ t('placeholder.dynamics') }}</h2>
         </div>
-        <span class="status-pill">В разработке</span>
+        <span class="status-pill">{{ t('placeholder.development') }}</span>
       </div>
 
       <div class="analytics-grid">
@@ -50,7 +53,7 @@ defineProps<{
         </div>
 
         <div class="focus-list">
-          <h3>Планируемые сводки</h3>
+          <h3>{{ t('placeholder.planned') }}</h3>
           <ul>
             <li v-for="item in focusItems" :key="item">{{ item }}</li>
           </ul>

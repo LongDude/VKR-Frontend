@@ -1,4 +1,5 @@
 import { request } from '@/services/apiClient'
+import { taxonomyApi } from '@/services/taxonomyApi'
 import type {
   FavoriteToggleResponse,
   FavoritesResponse,
@@ -37,15 +38,7 @@ export const userToolsApi = {
     limit = 10,
     parents: Partial<SelectedTags> = {},
   ): Promise<TrackedOptionsResponse> {
-    const params = new URLSearchParams()
-    appendIfPresent(params, 'type', type)
-    appendIfPresent(params, 'query', query)
-    appendIfPresent(params, 'limit', limit)
-    appendIfPresent(params, 'domainIds', parents.domains?.join(','))
-    appendIfPresent(params, 'fieldIds', parents.fields?.join(','))
-    appendIfPresent(params, 'subfieldIds', parents.subfields?.join(','))
-
-    return request<TrackedOptionsResponse>(`/profile/tracked/options?${params.toString()}`)
+    return taxonomyApi.options({ type, query, limit, parents })
   },
 
   addTracked(type: TaxonomyTagType, id: number): Promise<TrackedResponse> {

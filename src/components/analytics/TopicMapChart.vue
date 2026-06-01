@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EChartsOption } from 'echarts'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import EChartPanel from '@/components/analytics/EChartPanel.vue'
 import type { TopicMapPoint, TopicStatus } from '@/types/fieldAnalytics'
@@ -17,6 +18,7 @@ import {
 const props = defineProps<{
   points: TopicMapPoint[]
 }>()
+const { t } = useI18n()
 
 const statuses: TopicStatus[] = [
   'emerging',
@@ -51,20 +53,20 @@ const chartOption = computed<EChartsOption>(() => ({
 
       return [
         `<strong>${escapeHtml(point.topic.name)}</strong>`,
-        `Подобласть: ${escapeHtml(point.subfield.name)}`,
-        `Публикации за 12 мес.: ${formatInteger(point.papersLast12m)}`,
-        `Доля: ${formatPercent(point.share)}`,
-        `Изменение доли: ${formatOptionalSignedPercent(point.deltaShare)}`,
-        `Рост: ${formatOptionalSignedPercent(point.yoyGrowth)}`,
-        `Burst score: ${formatOptionalDecimal(point.burstScore)}`,
-        `Уверенность: ${formatPercent(point.confidence)}`,
-        `Покрытие: ${formatPercent(point.coverage)}`,
-        `Статус: ${statusLabels[point.status]}`,
+        t('analytics.charts.subfield', { name: escapeHtml(point.subfield.name) }),
+        t('analytics.charts.papers12m', { value: formatInteger(point.papersLast12m) }),
+        t('analytics.charts.share', { value: formatPercent(point.share) }),
+        t('analytics.charts.shareChange', { value: formatOptionalSignedPercent(point.deltaShare) }),
+        t('analytics.charts.growth', { value: formatOptionalSignedPercent(point.yoyGrowth) }),
+        t('analytics.charts.burst', { value: formatOptionalDecimal(point.burstScore) }),
+        t('analytics.charts.confidence', { value: formatPercent(point.confidence) }),
+        t('analytics.charts.coverage', { value: formatPercent(point.coverage) }),
+        t('analytics.charts.status', { value: statusLabels[point.status] }),
       ].join('<br />')
     },
   },
   xAxis: {
-    name: 'log(публикации за 12 мес.)',
+    name: t('analytics.charts.xAxisPublications'),
     nameLocation: 'middle',
     nameGap: 34,
     scale: true,
@@ -74,7 +76,7 @@ const chartOption = computed<EChartsOption>(() => ({
     axisLabel: {
       formatter: (value: number) => formatSignedPercent(value),
     },
-    name: 'Изменение доли',
+    name: t('analytics.charts.shareChangeLabel'),
     nameGap: 48,
     nameLocation: 'middle',
     scale: true,
@@ -113,12 +115,12 @@ function escapeHtml(value: string): string {
   <section class="analytics-panel">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Динамика предметной области</span>
-        <h2>Карта состояния научного направления (Field)</h2>
+        <span class="section-eyebrow">{{ t('analytics.charts.topicDynamics') }}</span>
+        <h2>{{ t('analytics.charts.topicMap') }}</h2>
       </div>
     </div>
 
     <EChartPanel v-if="points.length > 0" :option="chartOption" height="440px" />
-    <div v-else class="analytics-empty">Нет предметной области с сопоставимыми данными за выбранный период.</div>
+    <div v-else class="analytics-empty">{{ t('analytics.charts.noComparableTopics') }}</div>
   </section>
 </template>

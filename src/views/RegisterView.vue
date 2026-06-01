@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+import { technicalError } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const name = ref('')
 const email = ref('')
@@ -39,17 +42,17 @@ async function handleSubmit(): Promise<void> {
   errorMessage.value = ''
 
   if (!email.value.trim()) {
-    errorMessage.value = 'Укажите email.'
+    errorMessage.value = t('auth.register.emailRequired')
     return
   }
 
   if (password.value.length < 8) {
-    errorMessage.value = 'Пароль должен содержать не менее 8 символов.'
+    errorMessage.value = t('auth.register.passwordLength')
     return
   }
 
   if (password.value !== passwordConfirmation.value) {
-    errorMessage.value = 'Пароли не совпадают.'
+    errorMessage.value = t('auth.register.passwordMismatch')
     return
   }
 
@@ -63,7 +66,7 @@ async function handleSubmit(): Promise<void> {
     })
     await router.push(targetPath.value)
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Не удалось создать аккаунт.'
+    errorMessage.value = technicalError(t('auth.register.error'), error)
   } finally {
     isSubmitting.value = false
   }
@@ -79,8 +82,8 @@ async function handleSubmit(): Promise<void> {
       </div>
 
       <div class="auth-heading">
-        <h1>Регистрация</h1>
-        <p>Создайте аккаунт для персонального мониторинга исследовательских трендов.</p>
+        <h1>{{ t('routes.register') }}</h1>
+        <p>{{ t('auth.register.description') }}</p>
       </div>
 
       <form class="auth-form" novalidate @submit.prevent="handleSubmit">
@@ -89,19 +92,19 @@ async function handleSubmit(): Promise<void> {
         </div>
 
         <div>
-          <label class="form-label" for="register-name">Имя</label>
+          <label class="form-label" for="register-name">{{ t('auth.register.name') }}</label>
           <input
             id="register-name"
             v-model="name"
             class="form-control"
             type="text"
             autocomplete="name"
-            placeholder="Иван Петров"
+            :placeholder="t('auth.register.namePlaceholder')"
           />
         </div>
 
         <div>
-          <label class="form-label" for="register-email">Email</label>
+          <label class="form-label" for="register-email">{{ t('common.email') }}</label>
           <input
             id="register-email"
             v-model="email"
@@ -115,7 +118,7 @@ async function handleSubmit(): Promise<void> {
 
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label" for="register-password">Пароль</label>
+            <label class="form-label" for="register-password">{{ t('auth.register.password') }}</label>
             <input
               id="register-password"
               v-model="password"
@@ -127,7 +130,7 @@ async function handleSubmit(): Promise<void> {
             />
           </div>
           <div class="col-md-6">
-            <label class="form-label" for="register-password-confirmation">Повтор пароля</label>
+            <label class="form-label" for="register-password-confirmation">{{ t('auth.register.passwordRepeat') }}</label>
             <input
               id="register-password-confirmation"
               v-model="passwordConfirmation"
@@ -141,13 +144,13 @@ async function handleSubmit(): Promise<void> {
         </div>
 
         <button class="btn btn-primary auth-submit" type="submit" :disabled="isSubmitting">
-          {{ isSubmitting ? 'Создание...' : 'Зарегистрироваться' }}
+          {{ isSubmitting ? t('auth.register.submitting') : t('auth.register.submit') }}
         </button>
       </form>
 
       <p class="auth-switch">
-        Уже есть аккаунт?
-        <RouterLink :to="loginRoute">Войти</RouterLink>
+        {{ t('auth.register.hasAccount') }}
+        <RouterLink :to="loginRoute">{{ t('auth.register.login') }}</RouterLink>
       </p>
     </section>
   </main>

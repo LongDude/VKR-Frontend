@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { RepresentativeWork } from '@/types/topicAnalytics'
+import { useI18n } from 'vue-i18n'
+import { reasonSelectedLabel } from '@/utils/serverLabels'
 import {
   formatInteger,
   formatOptionalDecimal,
@@ -8,6 +10,7 @@ import {
 defineProps<{
   items: RepresentativeWork[]
 }>()
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'open-paper': [paperId: number]
@@ -68,8 +71,8 @@ function keywordLabels(item: RepresentativeWork): string[] {
   <section class="analytics-panel">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Публикации</span>
-        <h2>Репрезентативные работы</h2>
+        <span class="section-eyebrow">{{ t('topicAnalytics.works.eyebrow') }}</span>
+        <h2>{{ t('topicAnalytics.works.title') }}</h2>
       </div>
     </div>
 
@@ -83,28 +86,28 @@ function keywordLabels(item: RepresentativeWork): string[] {
           <span v-for="keyword in keywordLabels(item)" :key="keyword">{{ keyword }}</span>
         </div>
 
-        <p class="representative-work__authors">{{ item.authors || 'н/д' }}</p>
+        <p class="representative-work__authors">{{ item.authors || t('common.notAvailable') }}</p>
 
         <dl class="representative-work__meta">
           <div>
-            <dt>Год / дата</dt>
-            <dd>{{ item.year ?? 'н/д' }}<span v-if="item.date"> / {{ item.date }}</span></dd>
+            <dt>{{ t('paper.yearDate') }}</dt>
+            <dd>{{ item.year ?? t('common.notAvailable') }}<span v-if="item.date"> / {{ item.date }}</span></dd>
           </div>
           <div>
-            <dt>Цитирований</dt>
+            <dt>{{ t('common.citations') }}</dt>
             <dd>{{ formatInteger(item.citedBy) }}</dd>
           </div>
           <div>
-            <dt>Скорость цитирования</dt>
+            <dt>{{ t('topicAnalytics.works.citationVelocity') }}</dt>
             <dd>{{ formatOptionalDecimal(item.citationVelocity) }}</dd>
           </div>
           <div>
-            <dt>Причина выбора</dt>
-            <dd>{{ item.reasonSelected }}</dd>
+            <dt>{{ t('topicAnalytics.works.reason') }}</dt>
+            <dd>{{ reasonSelectedLabel(item.reasonSelected) }}</dd>
           </div>
         </dl>
       </article>
     </div>
-    <div v-else class="analytics-empty">Репрезентативные работы не найдены.</div>
+    <div v-else class="analytics-empty">{{ t('topicAnalytics.works.empty') }}</div>
   </section>
 </template>

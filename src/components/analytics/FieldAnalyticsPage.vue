@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import FieldActivityCharts from '@/components/analytics/FieldActivityCharts.vue'
 import FieldAnalyticsFilters from '@/components/analytics/FieldAnalyticsFilters.vue'
@@ -7,11 +8,31 @@ import FieldKpiCards from '@/components/analytics/FieldKpiCards.vue'
 import TopicMapChart from '@/components/analytics/TopicMapChart.vue'
 import TopicRankingTable from '@/components/analytics/TopicRankingTable.vue'
 import LoadingTimer from '@/components/LoadingTimer.vue'
+import { technicalError } from '@/i18n'
 import { fieldAnalyticsApi } from '@/services/fieldAnalyticsApi'
-import type { AnalyticsField, FieldAnalyticsQuery, FieldDashboardResponse } from '@/types/fieldAnalytics'
+import type {
+  AppliedFieldAnalyticsFilters,
+  FieldActivity,
+  FieldAnalyticsQuery,
+  FieldKpi,
+  FieldSectionKey,
+  SubfieldActivity,
+  TopicMap,
+  TopicRankings,
+} from '@/types/fieldAnalytics'
 
-const fields = ref<AnalyticsField[]>([])
-const dashboard = ref<FieldDashboardResponse | null>(null)
+interface SectionState<T> {
+  loading: boolean
+  error: string | null
+  data: T | null
+  requestId: number
+}
+
+function sectionState<T>(): SectionState<T> {
+  return { loading: false, error: null, data: null, requestId: 0 }
+}
+
+const { t } = useI18n()
 const filters = ref<FieldAnalyticsQuery>({
   fieldId: null,
   periodStart: '',
@@ -19,94 +40,28 @@ const filters = ref<FieldAnalyticsQuery>({
   comparisonWindowMonths: 12,
   movingAverageMonths: 3,
 })
-const isLoadingFields = ref(false)
-const isLoadingDashboard = ref(false)
-const errorMessage = ref<string | null>(null)
+const fieldName = ref(t('taxonomy.field'))
+const overview = reactive(sectionState<FieldKpi>())
+const activity = reactive(sectionState<{ fieldActivity: FieldActivity; subfieldActivity: SubfieldActivity }>())
+const topicMap = reactive(sectionState<TopicMap>())
+const rankings = reactive(sectionState<TopicRankings>())
+const states = [overview, activity, topicMap, rankings]
+const isLoading = computed(() => states.some((state) => state.loading))
+const hasData = computed(() => states.some((state) => state.data !== null))
 
-let fieldsRequestId = 0
-let dashboardRequestId = 0
-
-const selectedFieldName = computed(() => dashboard.value?.field.name ?? 'Field')
-const isLoading = computed(() => isLoadingFields.value || isLoadingDashboard.value)
-
-async function loadFields(): Promise<void> {
-  const requestId = ++fieldsRequestId
-  isLoadingFields.value = true
-
-  try {
-    const response = await fieldAnalyticsApi.listFields(50)
-    if (requestId !== fieldsRequestId) {
-      return
-    }
-
-    fields.value = response.fields
-    const hasSelectedField = response.fields.some((field) => field.id === filters.value.fieldId)
-    if (!hasSelectedField) {
-      filters.value = {
-        ...filters.value,
-        fieldId: response.fields[0]?.id ?? null,
-      }
-    }
-  } catch (error) {
-    if (requestId === fieldsRequestId) {
-      errorMessage.value = error instanceof Error ? error.message : 'Не удалось загрузить список Field.'
-    }
-  } finally {
-    if (requestId === fieldsRequestId) {
-      isLoadingFields.value = false
-    }
+function requestPayload() {
+  return {
+    fieldId: filters.value.fieldId!,
+    periodStart: filters.value.periodStart || undefined,
+    periodEnd: filters.value.periodEnd || undefined,
+    comparisonWindowMonths: filters.value.comparisonWindowMonths,
+    movingAverageMonths: filters.value.movingAverageMonths,
   }
 }
 
-async function loadDashboard(): Promise<void> {
-  if (filters.value.fieldId === null) {
-    dashboard.value = null
-    return
-  }
-
-  const requestId = ++dashboardRequestId
-  isLoadingDashboard.value = true
-  errorMessage.value = null
-
-  try {
-    const response = await fieldAnalyticsApi.dashboard({
-      fieldId: filters.value.fieldId,
-      periodStart: filters.value.periodStart || undefined,
-      periodEnd: filters.value.periodEnd || undefined,
-      comparisonWindowMonths: filters.value.comparisonWindowMonths,
-      movingAverageMonths: filters.value.movingAverageMonths,
-    })
-    if (requestId !== dashboardRequestId) {
-      return
-    }
-
-    dashboard.value = response
-    syncAppliedFilters(response)
-  } catch (error) {
-    if (requestId === dashboardRequestId) {
-      errorMessage.value = error instanceof Error ? error.message : 'Не удалось загрузить аналитику Field.'
-      dashboard.value = null
-    }
-  } finally {
-    if (requestId === dashboardRequestId) {
-      isLoadingDashboard.value = false
-    }
-  }
-}
-
-function syncAppliedFilters(response: FieldDashboardResponse): void {
-  const applied = response.filters
-  if (
-    filters.value.periodStart === applied.periodStart &&
-    filters.value.periodEnd === applied.periodEnd &&
-    filters.value.comparisonWindowMonths === applied.comparisonWindowMonths &&
-    filters.value.movingAverageMonths === applied.movingAverageMonths
-  ) {
-    return
-  }
-
+function syncAppliedFilters(fieldId: number, applied: AppliedFieldAnalyticsFilters): void {
   filters.value = {
-    fieldId: response.field.id,
+    fieldId,
     periodStart: applied.periodStart,
     periodEnd: applied.periodEnd,
     comparisonWindowMonths: applied.comparisonWindowMonths,
@@ -114,51 +69,87 @@ function syncAppliedFilters(response: FieldDashboardResponse): void {
   }
 }
 
-onMounted(() => {
-  void loadFields()
-})
+async function loadSection<T>(state: SectionState<T>, section: FieldSectionKey): Promise<void> {
+  if (filters.value.fieldId === null) {
+    return
+  }
+
+  const requestId = ++state.requestId
+  state.loading = true
+  state.error = null
+  try {
+    const response = await fieldAnalyticsApi.section<T>(section, requestPayload())
+    if (requestId !== state.requestId) {
+      return
+    }
+    state.data = response.data
+    fieldName.value = response.field.name
+    syncAppliedFilters(response.field.id, response.filters)
+  } catch (error) {
+    if (requestId === state.requestId) {
+      state.error = technicalError(t('analytics.sectionLoadError'), error)
+    }
+  } finally {
+    if (requestId === state.requestId) {
+      state.loading = false
+    }
+  }
+}
+
+function loadDashboard(): void {
+  if (filters.value.fieldId === null) {
+    return
+  }
+  void Promise.all([
+    loadSection(overview, 'overview'),
+    loadSection(activity, 'activity'),
+    loadSection(topicMap, 'topic-map'),
+    loadSection(rankings, 'rankings'),
+  ])
+}
 </script>
 
 <template>
   <section class="page-stack field-analytics-page">
     <div class="page-heading">
-      <span class="section-eyebrow">Мониторинг направлений</span>
-      <h1>Аналитика публикаций по Field</h1>
-      <p>
-        Сводка активности, темпов роста и состояния Topic внутри выбранного Field на основе OpenAlex monthly topic stats.
-      </p>
+      <span class="section-eyebrow">{{ t('analytics.monitoring') }}</span>
+      <h1>{{ t('analytics.directionsTitle') }}</h1>
+      <p>{{ t('analytics.directionsDescription') }}</p>
     </div>
 
-    <FieldAnalyticsFilters
-      v-model:value="filters"
-      :fields="fields"
-      :loading="isLoading"
-      @refresh="loadDashboard"
-    />
+    <FieldAnalyticsFilters v-model:value="filters" :loading="isLoading" @refresh="loadDashboard" />
 
-    <div v-if="errorMessage !== null" class="alert alert-danger analytics-alert" role="alert">
-      {{ errorMessage }}
-    </div>
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="overview.loading" :label="t('analytics.sections.overview')" compact />
+      <div v-if="overview.error" class="alert alert-danger analytics-alert" role="alert">{{ overview.error }}</div>
+      <FieldKpiCards v-if="overview.data" :kpi="overview.data" />
+    </section>
 
-    <LoadingTimer
-      v-if="isLoading && dashboard === null"
-      :label="isLoadingFields ? 'Загрузка списка Field...' : 'Загрузка аналитики...'"
-    />
-    <LoadingTimer v-else-if="isLoadingDashboard" label="Обновление аналитики..." compact />
-
-    <template v-if="dashboard !== null">
-      <FieldKpiCards :kpi="dashboard.kpi" />
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="activity.loading" :label="t('analytics.sections.activity')" compact />
+      <div v-if="activity.error" class="alert alert-danger analytics-alert" role="alert">{{ activity.error }}</div>
       <FieldActivityCharts
-        :field-name="selectedFieldName"
-        :field-activity="dashboard.fieldActivity"
-        :subfield-activity="dashboard.subfieldActivity"
+        v-if="activity.data"
+        :field-name="fieldName"
+        :field-activity="activity.data.fieldActivity"
+        :subfield-activity="activity.data.subfieldActivity"
       />
-      <TopicMapChart :points="dashboard.topicMap.points" />
-      <TopicRankingTable :rankings="dashboard.rankings" />
-    </template>
+    </section>
 
-    <div v-else-if="!isLoading" class="analytics-empty analytics-empty--page">
-      Выберите Field и нажмите «Обновить», чтобы построить страницу аналитики научных направлений.
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="topicMap.loading" :label="t('analytics.sections.topicMap')" compact />
+      <div v-if="topicMap.error" class="alert alert-danger analytics-alert" role="alert">{{ topicMap.error }}</div>
+      <TopicMapChart v-if="topicMap.data" :points="topicMap.data.points" />
+    </section>
+
+    <section class="analytics-report-section">
+      <LoadingTimer v-if="rankings.loading" :label="t('analytics.sections.rankings')" compact />
+      <div v-if="rankings.error" class="alert alert-danger analytics-alert" role="alert">{{ rankings.error }}</div>
+      <TopicRankingTable v-if="rankings.data" :rankings="rankings.data" />
+    </section>
+
+    <div v-if="!hasData && !isLoading" class="analytics-empty analytics-empty--page">
+      {{ t('analytics.selectFieldPrompt') }}
     </div>
   </section>
 </template>

@@ -3,6 +3,8 @@ import type {
   ComparisonWindowMonths,
   FieldDashboardResponse,
   FieldListResponse,
+  FieldSectionKey,
+  FieldSectionResponse,
   MovingAverageMonths,
 } from '@/types/fieldAnalytics'
 
@@ -39,6 +41,18 @@ export const fieldAnalyticsApi = {
 
     return request<FieldDashboardResponse>(
       `/analytics/fields/${payload.fieldId}/dashboard?${params.toString()}`,
+    )
+  },
+
+  section<T>(section: FieldSectionKey, payload: DashboardRequest): Promise<FieldSectionResponse<T>> {
+    const params = new URLSearchParams()
+    appendIfPresent(params, 'periodStart', payload.periodStart)
+    appendIfPresent(params, 'periodEnd', payload.periodEnd)
+    appendIfPresent(params, 'comparisonWindowMonths', payload.comparisonWindowMonths)
+    appendIfPresent(params, 'movingAverageMonths', payload.movingAverageMonths)
+
+    return request<FieldSectionResponse<T>>(
+      `/analytics/fields/${payload.fieldId}/sections/${section}?${params.toString()}`,
     )
   },
 }

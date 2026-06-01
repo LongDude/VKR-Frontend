@@ -5,6 +5,11 @@
   --analytics-ink-soft: #425166;
 }
 
+.analytics-report-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .analytics-filters {
   display: grid;
   gap: 1rem;

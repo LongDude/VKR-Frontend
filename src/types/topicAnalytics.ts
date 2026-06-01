@@ -1,6 +1,13 @@
 import type { AnalyticsDomain, AnalyticsField, AnalyticsWindow, ComparisonWindowMonths } from '@/types/fieldAnalytics'
 
 export type ForecastMonths = 6 | 12
+export type TopicSectionKey =
+  | 'passport'
+  | 'activity'
+  | 'trend-decomposition'
+  | 'related-topics'
+  | 'representative-works'
+  | 'quarter-reports'
 export type TopicDashboardStatus = 'emerging' | 'popular' | 'declining' | 'stable'
 export type DecompositionLevel = 'low' | 'medium' | 'high'
 export type RelatedTopicRelation = 'same subfield' | 'embedding similarity' | 'shared keyphrases'
@@ -79,6 +86,24 @@ export interface TopicForecastPoint {
 export interface TopicActivity {
   series: TopicActivityPoint[]
   forecast: TopicForecastPoint[]
+  forecastQuality: ForecastQuality
+}
+
+export interface ForecastQualityModel {
+  family: string
+  mae: number
+  mape: number
+  smape: number
+}
+
+export interface ForecastQualityGroup {
+  primaryMetric: 'MAE' | 'SMAPE'
+  models: ForecastQualityModel[]
+}
+
+export interface ForecastQuality {
+  activity: ForecastQualityGroup
+  share: ForecastQualityGroup
 }
 
 export interface TrendDecompositionMetric {
@@ -180,18 +205,26 @@ export interface PaperMetadata {
   authors: Array<Record<string, unknown>>
   keywords: Array<Record<string, unknown>>
   topics: Array<Record<string, unknown>>
+  taxonomy: {
+    domain: { id: number; name: string } | null
+    field: { id: number; name: string } | null
+    subfield: { id: number; name: string } | null
+    topic: { id: number; name: string }
+  } | null
   landings: Array<Record<string, unknown>>
 }
 
-export interface TopicDashboardResponse {
-  topic: {
+export interface TopicAnalyticsEntity {
     id: number
     name: string
     openalexId: string | null
     subfield: TopicSubfieldRef | null
     field: Pick<AnalyticsField, 'id' | 'name'> | null
     domain: AnalyticsDomain | null
-  }
+}
+
+export interface TopicDashboardResponse {
+  topic: TopicAnalyticsEntity
   filters: AppliedTopicAnalyticsFilters
   kpi: TopicPassport
   activity: TopicActivity
@@ -203,5 +236,12 @@ export interface TopicDashboardResponse {
   quarterReports: {
     items: QuarterReportItem[]
   }
+  mlStatus: MlStatus
+}
+
+export interface TopicSectionResponse<T> {
+  topic: TopicAnalyticsEntity
+  filters: AppliedTopicAnalyticsFilters
+  data: T
   mlStatus: MlStatus
 }

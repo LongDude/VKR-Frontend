@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+import { technicalError } from '@/i18n'
 import { adminUsersApi } from '@/services/adminUsersApi'
 import { ApiError } from '@/services/apiClient'
 import { useAuthStore } from '@/stores/auth'
@@ -28,6 +30,7 @@ interface RoleModalState {
 }
 
 const router = useRouter()
+const { t } = useI18n()
 const auth = useAuthStore()
 const users = ref<AdminUser[]>([])
 const rolePool = ref<ManageableRoleOption[]>([])
@@ -73,7 +76,7 @@ function currentRoleValue(user: AdminUser): string {
 }
 
 function displayName(user: AdminUser): string {
-  return user.name?.trim() || 'Имя не указано'
+  return user.name?.trim() || t('admin.users.unnamed')
 }
 
 function formatCreatedAt(value: string): string {
@@ -97,7 +100,7 @@ async function loadUsers(page = pagination.value.page): Promise<void> {
       roleSelections[userKey(user)] = currentRoleValue(user)
     }
   } catch (error) {
-    pageError.value = error instanceof Error ? error.message : 'Не удалось загрузить пользователей.'
+    pageError.value = technicalError(t('admin.users.loadError'), error)
   } finally {
     loading.value = false
   }
@@ -157,13 +160,13 @@ async function confirmRoleChange(): Promise<void> {
 
   try {
     await adminUsersApi.updateRoles(modal.user.id as number | string, modal.roles, rolePassword.value)
-    actionMessage.value = `Права пользователя ${displayName(modal.user)} обновлены.`
+    actionMessage.value = t('admin.users.rightsUpdated', { name: displayName(modal.user) })
     roleModal.value = null
     rolePassword.value = ''
     roleAttemptsRemaining.value = null
     await loadUsers()
   } catch (error) {
-    roleError.value = error instanceof Error ? error.message : 'Не удалось изменить права пользователя.'
+    roleError.value = technicalError(t('admin.users.roleError'), error)
     if (error instanceof ApiError && isRoleConfirmationError(error.payload)) {
       roleAttemptsRemaining.value = error.payload.attemptsRemaining
       if (error.payload.sessionClosed) {
@@ -197,13 +200,13 @@ function isConfirming(user: AdminUser): boolean {
 function confirmationText(user: AdminUser): string {
   switch (inlineConfirmation.value?.action) {
     case 'block':
-      return `Заблокировать пользователя ${displayName(user)}?`
+      return t('admin.users.blockConfirm', { name: displayName(user) })
     case 'unblock':
-      return `Разблокировать пользователя ${displayName(user)}?`
+      return t('admin.users.unblockConfirm', { name: displayName(user) })
     case 'reset-password':
-      return `Сбросить пароль пользователя ${displayName(user)}?`
+      return t('admin.users.resetConfirm', { name: displayName(user) })
     case 'delete':
-      return `Удалить пользователя ${displayName(user)} без возможности восстановления?`
+      return t('admin.users.deleteConfirm', { name: displayName(user) })
     default:
       return ''
   }
@@ -221,20 +224,20 @@ async function confirmInlineAction(user: AdminUser): Promise<void> {
     switch (confirmation.action) {
       case 'block':
         await adminUsersApi.setBlocked(user.id as number | string, true)
-        actionMessage.value = `Пользователь ${displayName(user)} заблокирован.`
+        actionMessage.value = t('admin.users.blockedMessage', { name: displayName(user) })
         break
       case 'unblock':
         await adminUsersApi.setBlocked(user.id as number | string, false)
-        actionMessage.value = `Пользователь ${displayName(user)} разблокирован.`
+        actionMessage.value = t('admin.users.unblockedMessage', { name: displayName(user) })
         break
       case 'reset-password': {
         const response = await adminUsersApi.resetPassword(user.id as number | string)
-        actionMessage.value = `Для пользователя ${displayName(user)} установлен стандартный пароль ${response.standardPassword}.`
+        actionMessage.value = t('admin.users.resetMessage', { name: displayName(user), password: response.standardPassword })
         break
       }
       case 'delete':
         await adminUsersApi.deleteUser(user.id as number | string)
-        actionMessage.value = `Пользователь ${displayName(user)} удален.`
+        actionMessage.value = t('admin.users.deletedMessage', { name: displayName(user) })
         break
     }
 
@@ -244,7 +247,7 @@ async function confirmInlineAction(user: AdminUser): Promise<void> {
       : pagination.value.page
     await loadUsers(nextPage)
   } catch (error) {
-    pageError.value = error instanceof Error ? error.message : 'Не удалось выполнить операцию.'
+    pageError.value = technicalError(t('admin.users.actionError'), error)
   } finally {
     busyAction.value = null
   }
@@ -267,25 +270,25 @@ onMounted(() => {
 <template>
   <section class="page-stack admin-users-page">
     <div class="page-heading">
-      <span class="section-eyebrow">Администрирование</span>
-      <h1>Пользователи</h1>
-      <p>Поиск учетных записей, управление доступом и административными правами.</p>
+      <span class="section-eyebrow">{{ t('admin.users.eyebrow') }}</span>
+      <h1>{{ t('routes.users') }}</h1>
+      <p>{{ t('admin.users.description') }}</p>
     </div>
 
     <section class="analytics-panel">
       <form class="admin-users-search" @submit.prevent="submitSearch">
-        <label class="form-label mb-0" for="admin-users-search">Поиск по имени или email</label>
+        <label class="form-label mb-0" for="admin-users-search">{{ t('admin.users.searchLabel') }}</label>
         <div class="input-group">
           <input
             id="admin-users-search"
             v-model="searchInput"
             class="form-control"
             type="search"
-            placeholder="Введите имя или email"
+            :placeholder="t('admin.users.searchPlaceholder')"
           />
-          <button class="btn btn-primary" type="submit" :disabled="loading">Найти</button>
+          <button class="btn btn-primary" type="submit" :disabled="loading">{{ t('common.find') }}</button>
           <button v-if="appliedSearch" class="btn btn-outline-secondary" type="button" :disabled="loading" @click="clearSearch">
-            Сбросить
+            {{ t('admin.users.reset') }}
           </button>
         </div>
       </form>
@@ -297,23 +300,23 @@ onMounted(() => {
     <section class="analytics-panel">
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
-          <span class="section-eyebrow">Учетные записи</span>
-          <h2 class="h5 mb-0">Список пользователей</h2>
+          <span class="section-eyebrow">{{ t('admin.users.accounts') }}</span>
+          <h2 class="h5 mb-0">{{ t('admin.users.list') }}</h2>
         </div>
-        <span class="badge text-bg-light border">Всего: {{ pagination.totalItems }}</span>
+        <span class="badge text-bg-light border">{{ t('admin.users.total', { total: pagination.totalItems }) }}</span>
       </div>
 
-      <div v-if="loading" class="text-secondary">Загрузка пользователей...</div>
-      <div v-else-if="users.length === 0" class="text-secondary">Пользователи не найдены.</div>
+      <div v-if="loading" class="text-secondary">{{ t('admin.users.loading') }}</div>
+      <div v-else-if="users.length === 0" class="text-secondary">{{ t('admin.users.empty') }}</div>
       <div v-else class="table-responsive">
         <table class="table align-middle admin-users-table">
           <thead>
             <tr>
-              <th scope="col">Пользователь</th>
-              <th scope="col">Дата создания</th>
-              <th scope="col">Статус</th>
-              <th scope="col">Административная роль</th>
-              <th scope="col">Действия</th>
+              <th scope="col">{{ t('admin.users.user') }}</th>
+              <th scope="col">{{ t('admin.users.createdAt') }}</th>
+              <th scope="col">{{ t('common.status') }}</th>
+              <th scope="col">{{ t('admin.users.adminRole') }}</th>
+              <th scope="col">{{ t('common.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -321,12 +324,12 @@ onMounted(() => {
               <td>
                 <strong class="d-block">{{ displayName(user) }}</strong>
                 <span class="text-secondary">{{ user.email }}</span>
-                <span v-if="user.isCurrentUser" class="badge text-bg-light border ms-2">Вы</span>
+                <span v-if="user.isCurrentUser" class="badge text-bg-light border ms-2">{{ t('admin.users.you') }}</span>
               </td>
               <td class="text-nowrap">{{ formatCreatedAt(user.createdAt) }}</td>
               <td>
                 <span class="badge" :class="user.isBlocked ? 'text-bg-secondary' : 'text-bg-success'">
-                  {{ user.isBlocked ? 'Заблокирован' : 'Активен' }}
+                  {{ user.isBlocked ? t('admin.users.blocked') : t('admin.users.active') }}
                 </span>
               </td>
               <td>
@@ -334,10 +337,10 @@ onMounted(() => {
                   :value="roleSelections[userKey(user)] ?? currentRoleValue(user)"
                   class="form-select form-select-sm admin-users-role-select"
                   :disabled="user.isCurrentUser || roleBusy"
-                  :title="user.isCurrentUser ? 'Нельзя изменить собственные административные права.' : ''"
+                  :title="user.isCurrentUser ? t('admin.users.ownRole') : ''"
                   @change="requestRoleChange(user, $event)"
                 >
-                  <option value="">Без роли администратора</option>
+                  <option value="">{{ t('admin.users.noAdminRole') }}</option>
                   <option v-for="role in rolePool" :key="role.value" :value="role.value">{{ role.label }}</option>
                 </select>
               </td>
@@ -348,28 +351,28 @@ onMounted(() => {
                     :class="user.isBlocked ? 'btn-outline-success' : 'btn-outline-warning'"
                     type="button"
                     :disabled="user.isCurrentUser"
-                    :title="user.isCurrentUser ? 'Нельзя заблокировать собственную учетную запись.' : ''"
+                    :title="user.isCurrentUser ? t('admin.users.ownBlock') : ''"
                     @click="startInlineConfirmation(user, user.isBlocked ? 'unblock' : 'block')"
                   >
-                    {{ user.isBlocked ? 'Разблокировать' : 'Заблокировать' }}
+                    {{ user.isBlocked ? t('admin.users.unblock') : t('admin.users.block') }}
                   </button>
                   <button
                     class="btn btn-sm btn-outline-primary"
                     type="button"
                     :disabled="user.isCurrentUser"
-                    :title="user.isCurrentUser ? 'Нельзя сбросить собственный пароль.' : ''"
+                    :title="user.isCurrentUser ? t('admin.users.ownReset') : ''"
                     @click="startInlineConfirmation(user, 'reset-password')"
                   >
-                    Сбросить пароль
+                    {{ t('admin.users.resetPassword') }}
                   </button>
                   <button
                     class="btn btn-sm btn-outline-danger"
                     type="button"
                     :disabled="user.isCurrentUser"
-                    :title="user.isCurrentUser ? 'Нельзя удалить собственную учетную запись.' : ''"
+                    :title="user.isCurrentUser ? t('admin.users.ownDelete') : ''"
                     @click="startInlineConfirmation(user, 'delete')"
                   >
-                    Удалить
+                    {{ t('admin.users.delete') }}
                   </button>
                 </div>
 
@@ -377,10 +380,10 @@ onMounted(() => {
                   <span>{{ confirmationText(user) }}</span>
                   <div class="d-flex flex-wrap gap-2">
                     <button class="btn btn-sm btn-danger" type="button" :disabled="busyAction !== null" @click="confirmInlineAction(user)">
-                      Подтвердить
+                      {{ t('admin.users.confirm') }}
                     </button>
                     <button class="btn btn-sm btn-outline-secondary" type="button" :disabled="busyAction !== null" @click="cancelInlineConfirmation">
-                      Отмена
+                      {{ t('common.cancel') }}
                     </button>
                   </div>
                 </div>
@@ -390,11 +393,11 @@ onMounted(() => {
         </table>
       </div>
 
-      <nav v-if="pagination.totalPages > 1" class="mt-3" aria-label="Пагинация пользователей">
+      <nav v-if="pagination.totalPages > 1" class="mt-3" :aria-label="t('admin.users.paginationAria')">
         <ul class="pagination pagination-sm mb-0">
           <li class="page-item" :class="{ disabled: pagination.page === 1 }">
             <button class="page-link" type="button" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">
-              Назад
+              {{ t('common.back') }}
             </button>
           </li>
           <li v-for="page in visiblePages" :key="page" class="page-item" :class="{ active: page === pagination.page }">
@@ -407,7 +410,7 @@ onMounted(() => {
               :disabled="pagination.page === pagination.totalPages"
               @click="changePage(pagination.page + 1)"
             >
-              Далее
+              {{ t('common.next') }}
             </button>
           </li>
         </ul>
@@ -418,21 +421,21 @@ onMounted(() => {
       <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content" @submit.prevent="confirmRoleChange">
           <div class="modal-header">
-            <h2 class="modal-title fs-5">Подтверждение изменения роли</h2>
-            <button class="btn-close" type="button" aria-label="Закрыть" :disabled="roleBusy" @click="closeRoleModal"></button>
+            <h2 class="modal-title fs-5">{{ t('admin.users.roleModal') }}</h2>
+            <button class="btn-close" type="button" :aria-label="t('common.close')" :disabled="roleBusy" @click="closeRoleModal"></button>
           </div>
           <div class="modal-body">
             <p>
-              Подтвердите изменение административных прав пользователя
+              {{ t('admin.users.roleModalText') }}
               <strong>{{ displayName(roleModal.user) }}</strong>.
             </p>
             <div v-if="roleError" class="alert alert-danger" role="alert">
               {{ roleError }}
               <span v-if="roleAttemptsRemaining !== null" class="d-block mt-1">
-                Осталось попыток: {{ roleAttemptsRemaining }}.
+                {{ t('admin.users.attempts', { count: roleAttemptsRemaining }) }}
               </span>
             </div>
-            <label class="form-label" for="admin-role-password">Ваш текущий пароль</label>
+            <label class="form-label" for="admin-role-password">{{ t('admin.users.yourPassword') }}</label>
             <input
               id="admin-role-password"
               v-model="rolePassword"
@@ -443,9 +446,9 @@ onMounted(() => {
             />
           </div>
           <div class="modal-footer">
-            <button class="btn btn-outline-secondary" type="button" :disabled="roleBusy" @click="closeRoleModal">Отмена</button>
+            <button class="btn btn-outline-secondary" type="button" :disabled="roleBusy" @click="closeRoleModal">{{ t('common.cancel') }}</button>
             <button class="btn btn-primary" type="submit" :disabled="roleBusy">
-              {{ roleBusy ? 'Проверка...' : 'Подтвердить' }}
+              {{ roleBusy ? t('admin.users.checking') : t('admin.users.confirm') }}
             </button>
           </div>
         </form>

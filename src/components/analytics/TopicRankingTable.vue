@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import TopicStatusBadge from '@/components/analytics/TopicStatusBadge.vue'
 import type { RankingMode, TopicRankings } from '@/types/fieldAnalytics'
@@ -13,30 +14,31 @@ import {
 const props = defineProps<{
   rankings: TopicRankings
 }>()
+const { t } = useI18n()
 
 const activeMode = ref<RankingMode>('popular')
 
-const modes: Array<{ key: RankingMode; label: string }> = [
-  { key: 'popular', label: 'Популярные' },
-  { key: 'growing', label: 'Растущие' },
-  { key: 'emerging', label: 'Появляющиеся' },
-  { key: 'declining', label: 'Теряют долю' },
-]
+const modes = computed<Array<{ key: RankingMode; label: string }>>(() => [
+  { key: 'popular', label: t('analytics.charts.statusModes.popular') },
+  { key: 'growing', label: t('analytics.charts.statusModes.growing') },
+  { key: 'emerging', label: t('analytics.charts.statusModes.emerging') },
+  { key: 'declining', label: t('analytics.charts.statusModes.declining') },
+])
 
 const rows = computed(() => props.rankings[activeMode.value] ?? [])
 
 const sortingMetricLabel = computed(() => {
   if (activeMode.value === 'popular') {
-    return 'Критерий: публикации'
+    return t('analytics.charts.criterionPublications')
   }
   if (activeMode.value === 'growing') {
-    return 'Критерий: trend score'
+    return t('analytics.charts.criterionTrend')
   }
   if (activeMode.value === 'emerging') {
-    return 'Критерий: emerging score'
+    return t('analytics.charts.criterionEmerging')
   }
 
-  return 'Критерий: declining score'
+  return t('analytics.charts.criterionDeclining')
 })
 
 function sortingMetricValue(row: (typeof rows.value)[number]): string {
@@ -58,10 +60,10 @@ function sortingMetricValue(row: (typeof rows.value)[number]): string {
   <section class="analytics-panel ranking-panel">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Рейтинг</span>
-        <h2>Топ тем</h2>
+        <span class="section-eyebrow">{{ t('analytics.charts.ranking') }}</span>
+        <h2>{{ t('analytics.charts.topTopics') }}</h2>
       </div>
-      <div class="ranking-tabs" role="tablist" aria-label="Режим рейтинга">
+      <div class="ranking-tabs" role="tablist" :aria-label="t('analytics.charts.rankingModeAria')">
         <button
           v-for="mode in modes"
           :key="mode.key"
@@ -79,17 +81,17 @@ function sortingMetricValue(row: (typeof rows.value)[number]): string {
       <table class="table analytics-table align-middle">
         <thead>
           <tr>
-            <th>Предметная область (Topic)</th>
-            <th>Поднаправление (Subfield)</th>
-            <th>Публикации за 12 мес.</th>
-            <th>Доля внутри поднаправления</th>
-            <th>Изменение доли</th>
-            <th>Рост</th>
-            <th>Burst score</th>
+            <th>{{ t('taxonomy.topic') }}</th>
+            <th>{{ t('taxonomy.subfield') }}</th>
+            <th>{{ t('topicAnalytics.papers12m') }}</th>
+            <th>{{ t('topicAnalytics.shareInsideSubfield') }}</th>
+            <th>{{ t('analytics.charts.shareChangeLabel') }}</th>
+            <th>{{ t('common.growth') }}</th>
+            <th>{{ t('analytics.charts.burstScore') }}</th>
             <th>{{ sortingMetricLabel }}</th>
-            <th>Уверенность</th>
-            <th>Покрытие</th>
-            <th>Статус</th>
+            <th>{{ t('common.confidence') }}</th>
+            <th>{{ t('common.coverage') }}</th>
+            <th>{{ t('common.status') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -113,7 +115,7 @@ function sortingMetricValue(row: (typeof rows.value)[number]): string {
             <td><TopicStatusBadge :status="row.status" /></td>
           </tr>
           <tr v-if="rows.length === 0">
-            <td colspan="11" class="analytics-empty-cell">Нет данных для рейтинга.</td>
+            <td colspan="11" class="analytics-empty-cell">{{ t('analytics.charts.noRanking') }}</td>
           </tr>
         </tbody>
       </table>

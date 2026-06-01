@@ -1,4 +1,5 @@
 import type { TopicStatus } from '@/types/fieldAnalytics'
+import { i18n } from '@/i18n'
 
 const compactNumber = new Intl.NumberFormat('ru-RU', {
   notation: 'compact',
@@ -25,12 +26,12 @@ const decimalNumber = new Intl.NumberFormat('ru-RU', {
 })
 
 export const statusLabels: Record<TopicStatus, string> = {
-  emerging: 'Появляющаяся',
-  accelerating: 'Ускоряется',
-  popular_hot: 'Крупная стабильная',
-  stable: 'Без выраженной динамики',
-  declining: 'Теряет долю',
-  low_confidence: 'Низкая уверенность',
+  emerging: i18n.global.t('statuses.topic.emerging'),
+  accelerating: i18n.global.t('statuses.topic.accelerating'),
+  popular_hot: i18n.global.t('statuses.topic.popular_hot'),
+  stable: i18n.global.t('statuses.topic.stable'),
+  declining: i18n.global.t('statuses.topic.declining'),
+  low_confidence: i18n.global.t('statuses.topic.low_confidence'),
 }
 
 export const statusColors: Record<TopicStatus, string> = {
@@ -59,15 +60,15 @@ export function formatSignedPercent(value: number): string {
 }
 
 export function formatOptionalPercent(value: number | null): string {
-  return value === null ? 'н/д' : percentNumber.format(value)
+  return value === null ? i18n.global.t('common.notAvailable') : percentNumber.format(value)
 }
 
 export function formatOptionalSignedPercent(value: number | null): string {
-  return value === null ? 'н/д' : signedPercentNumber.format(value)
+  return value === null ? i18n.global.t('common.notAvailable') : signedPercentNumber.format(value)
 }
 
 export function formatOptionalDecimal(value: number | null): string {
-  return value === null ? 'н/д' : decimalNumber.format(value)
+  return value === null ? i18n.global.t('common.notAvailable') : decimalNumber.format(value)
 }
 
 export function formatDecimal(value: number): string {

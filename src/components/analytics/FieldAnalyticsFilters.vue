@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+import TaxonomyDropdown from '@/components/user/TaxonomyDropdown.vue'
 import type {
-  AnalyticsField,
   ComparisonWindowMonths,
   FieldAnalyticsQuery,
   MovingAverageMonths,
 } from '@/types/fieldAnalytics'
-import { formatCompact } from '@/utils/fieldAnalyticsFormatters'
+import type { TaxonomyTag } from '@/types/userTools'
 
 const props = defineProps<{
-  fields: AnalyticsField[]
   value: FieldAnalyticsQuery
   loading?: boolean
 }>()
@@ -20,13 +20,11 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
+const { t } = useI18n()
 const comparisonOptions: ComparisonWindowMonths[] = [6, 12, 24]
 const movingAverageOptions: MovingAverageMonths[] = [1, 2, 3]
 const hideEmptyAreas = ref(false)
-
-const visibleFields = computed(() =>
-  hideEmptyAreas.value ? props.fields.filter((field) => (field.recent12mPapers ?? 0) > 0) : props.fields,
-)
+const selectedField = ref<TaxonomyTag | null>(null)
 
 function patchValue(patch: Partial<FieldAnalyticsQuery>): void {
   emit('update:value', {
@@ -45,19 +43,15 @@ function toMovingAverage(value: string): MovingAverageMonths {
   return parsed === 1 || parsed === 2 ? parsed : 3
 }
 
-function updateField(value: string): void {
-  const fieldId = Number(value)
-  patchValue({ fieldId: Number.isFinite(fieldId) && fieldId > 0 ? fieldId : null })
+function updateField(item: TaxonomyTag): void {
+  selectedField.value = item
+  patchValue({ fieldId: item.id })
 }
 
 watch(hideEmptyAreas, (enabled) => {
-  if (!enabled) {
-    return
-  }
-
-  const selectedFieldIsVisible = visibleFields.value.some((field) => field.id === props.value.fieldId)
-  if (!selectedFieldIsVisible) {
-    updateField(String(visibleFields.value[0]?.id ?? ''))
+  if (enabled && selectedField.value?.papersCount === 0) {
+    selectedField.value = null
+    patchValue({ fieldId: null })
   }
 })
 </script>
@@ -66,23 +60,19 @@ watch(hideEmptyAreas, (enabled) => {
   <section class="analytics-filters">
     <div class="analytics-filters__row">
       <div class="analytics-filters__field">
-        <label class="form-label" for="field-select">Научное направление (Field)</label>
-        <select
-          id="field-select"
-          class="form-select"
-          :value="value.fieldId ?? ''"
-          :disabled="loading || visibleFields.length === 0"
-          @change="updateField(($event.target as HTMLSelectElement).value)"
-        >
-          <option value="">Выберите Field</option>
-          <option v-for="field in visibleFields" :key="field.id" :value="field.id">
-            {{ field.name }} · {{ formatCompact(field.recent12mPapers ?? 0) }}
-          </option>
-        </select>
+        <label class="form-label">{{ t('taxonomy.field') }}</label>
+        <TaxonomyDropdown
+          type="field"
+          :selected-ids="value.fieldId === null ? [] : [value.fieldId]"
+          :hide-empty="hideEmptyAreas"
+          :disabled="loading"
+          auto-select
+          @select="updateField"
+        />
       </div>
 
       <div>
-        <label class="form-label" for="period-start">Начало периода</label>
+        <label class="form-label" for="period-start">{{ t('analytics.periodStart') }}</label>
         <input
           id="period-start"
           class="form-control"
@@ -94,7 +84,7 @@ watch(hideEmptyAreas, (enabled) => {
       </div>
 
       <div>
-        <label class="form-label" for="period-end">Конец периода</label>
+        <label class="form-label" for="period-end">{{ t('analytics.periodEnd') }}</label>
         <input
           id="period-end"
           class="form-control"
@@ -106,7 +96,7 @@ watch(hideEmptyAreas, (enabled) => {
       </div>
 
       <div>
-        <label class="form-label" for="comparison-window">Окно сравнения</label>
+        <label class="form-label" for="comparison-window">{{ t('analytics.comparisonWindow') }}</label>
         <select
           id="comparison-window"
           class="form-select"
@@ -115,13 +105,13 @@ watch(hideEmptyAreas, (enabled) => {
           @change="patchValue({ comparisonWindowMonths: toComparisonWindow(($event.target as HTMLSelectElement).value) })"
         >
           <option v-for="option in comparisonOptions" :key="option" :value="option">
-            {{ option }} мес.
+            {{ option }} {{ t('common.monthShort') }}
           </option>
         </select>
       </div>
 
       <div>
-        <label class="form-label" for="moving-average">Скользящее среднее</label>
+        <label class="form-label" for="moving-average">{{ t('analytics.movingAverage') }}</label>
         <select
           id="moving-average"
           class="form-select"
@@ -130,14 +120,14 @@ watch(hideEmptyAreas, (enabled) => {
           @change="patchValue({ movingAverageMonths: toMovingAverage(($event.target as HTMLSelectElement).value) })"
         >
           <option v-for="option in movingAverageOptions" :key="option" :value="option">
-            {{ option }} мес.
+            {{ option }} {{ t('common.monthShort') }}
           </option>
         </select>
       </div>
 
       <div class="analytics-filters__action">
         <button class="btn btn-primary" type="button" :disabled="loading || value.fieldId === null" @click="emit('refresh')">
-          Обновить
+          {{ t('common.update') }}
         </button>
       </div>
     </div>
@@ -145,7 +135,7 @@ watch(hideEmptyAreas, (enabled) => {
     <div class="analytics-filters__row analytics-filters__row--flags">
       <label class="analytics-filter-check">
         <input v-model="hideEmptyAreas" class="form-check-input" type="checkbox" />
-        <span>Скрыть области без данных</span>
+        <span>{{ t('common.hideEmptyAreas') }}</span>
       </label>
     </div>
   </section>

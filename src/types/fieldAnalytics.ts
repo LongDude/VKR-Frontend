@@ -1,6 +1,7 @@
 export type ComparisonWindowMonths = 6 | 12 | 24
 export type MovingAverageMonths = 1 | 2 | 3
 export type RankingMode = 'popular' | 'growing' | 'emerging' | 'declining'
+export type FieldSectionKey = 'overview' | 'activity' | 'topic-map' | 'rankings'
 export type TopicStatus =
   | 'emerging'
   | 'accelerating'
@@ -134,3 +135,17 @@ export interface FieldDashboardResponse {
   topicMap: TopicMap
   rankings: TopicRankings
 }
+
+export interface FieldSectionResponse<T> {
+  field: AnalyticsField
+  filters: AppliedFieldAnalyticsFilters
+  data: T
+}
+
+export type FieldOverviewSection = FieldSectionResponse<FieldKpi>
+export type FieldActivitySection = FieldSectionResponse<{
+  fieldActivity: FieldActivity
+  subfieldActivity: SubfieldActivity
+}>
+export type FieldTopicMapSection = FieldSectionResponse<TopicMap>
+export type FieldRankingsSection = FieldSectionResponse<TopicRankings>

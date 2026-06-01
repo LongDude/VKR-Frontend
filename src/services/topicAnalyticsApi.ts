@@ -5,6 +5,8 @@ import type {
   PaperMetadata,
   TopicDashboardResponse,
   TopicListResponse,
+  TopicSectionKey,
+  TopicSectionResponse,
 } from '@/types/topicAnalytics'
 
 interface TopicDashboardRequest {
@@ -40,6 +42,18 @@ export const topicAnalyticsApi = {
 
     return request<TopicDashboardResponse>(
       `/analytics/topics/${payload.topicId}/dashboard?${params.toString()}`,
+    )
+  },
+
+  section<T>(section: TopicSectionKey, payload: TopicDashboardRequest): Promise<TopicSectionResponse<T>> {
+    const params = new URLSearchParams()
+    appendIfPresent(params, 'periodStart', payload.periodStart)
+    appendIfPresent(params, 'periodEnd', payload.periodEnd)
+    appendIfPresent(params, 'comparisonWindowMonths', payload.comparisonWindowMonths)
+    appendIfPresent(params, 'forecastMonths', payload.forecastMonths)
+
+    return request<TopicSectionResponse<T>>(
+      `/analytics/topics/${payload.topicId}/sections/${section}?${params.toString()}`,
     )
   },
 

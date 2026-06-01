@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import AdminCoverageFilters from '@/components/admin/AdminCoverageFilters.vue'
 import DataCoveragePanel from '@/components/admin/DataCoveragePanel.vue'
 import { adminApi } from '@/services/adminApi'
+import { technicalError } from '@/i18n'
 import type {
   CoverageTask,
   CoverageWorkflow,
@@ -13,19 +15,16 @@ import type {
   WorkerStatus,
 } from '@/types/adminCoverage'
 import type { SelectedTags, TaxonomyGroupKey, TaxonomyTag, TaxonomyTagGroups, TaxonomyTagType } from '@/types/userTools'
+import { panelLabel, presetLabel, workflowStatusLabel } from '@/utils/serverLabels'
 
 const storageKey = 'scinside.admin.dataCoverage.filters'
+const { t } = useI18n()
 let ready = false
 let pollId: ReturnType<typeof setInterval> | null = null
 
-const panelDefinitions: Array<{ key: DataCoveragePanelKey; title: string }> = [
-  { key: 'monthly-stats', title: 'Сбор статистики месячных публикаций с OpenAlex' },
-  { key: 'sample-papers', title: 'Сбор sample статей' },
-  { key: 'indexing', title: 'Индексация' },
-  { key: 'cluster-dynamics', title: 'Анализ динамики кластеров' },
-  { key: 'keyphrases', title: 'Извлечение ключевых фраз' },
-  { key: 'quarter-reports', title: 'Формирование характеристики (LLM-отчетов)' },
-]
+const panelDefinitions: Array<{ key: DataCoveragePanelKey; title: string }> = (
+  ['monthly-stats', 'sample-papers', 'indexing', 'cluster-dynamics', 'keyphrases', 'quarter-reports'] as DataCoveragePanelKey[]
+).map((key) => ({ key, title: panelLabel(key) }))
 
 interface PanelState {
   loading: boolean
@@ -134,7 +133,7 @@ async function loadPanel(panelKey: DataCoveragePanelKey): Promise<void> {
     if (requestId === state.requestId) state.data = data
   } catch (error) {
     if (requestId === state.requestId) {
-      state.error = error instanceof Error ? error.message : 'Не удалось загрузить покрытие данных.'
+      state.error = technicalError(t('admin.panel.loadCoverageError'), error)
       state.data = null
     }
   } finally {
@@ -171,7 +170,7 @@ async function refreshTracking(): Promise<void> {
     const completed = new Set([...taskResponse.completedPanelKeys, ...workflowResponse.completedPanelKeys])
     completed.forEach((panelKey) => void loadPanel(panelKey))
   } catch (error) {
-    orchestrationError.value = error instanceof Error ? error.message : 'Не удалось получить состояние очереди.'
+    orchestrationError.value = technicalError(t('admin.panel.trackingError'), error)
   }
 }
 
@@ -182,7 +181,7 @@ async function enqueuePanel(panelKey: DataCoveragePanelKey, from: string, to: st
     await adminApi.enqueuePanel(panelKey, { selectedTags: selectedTagIds.value, periodFrom: from, periodTo: to })
     await refreshTracking()
   } catch (error) {
-    orchestrationError.value = error instanceof Error ? error.message : 'Не удалось поставить задачи в очередь.'
+    orchestrationError.value = technicalError(t('admin.panel.enqueueError'), error)
   } finally {
     actionBusy[panelKey] = false
   }
@@ -200,7 +199,7 @@ async function enqueueWorkflow(): Promise<void> {
     })
     await refreshTracking()
   } catch (error) {
-    orchestrationError.value = error instanceof Error ? error.message : 'Не удалось запустить цикл обработки.'
+    orchestrationError.value = technicalError(t('admin.panel.workflowError'), error)
   } finally {
     workflowBusy.value = false
   }
@@ -226,9 +225,9 @@ watch([selectionSignature, periodFrom, periodTo], () => {
 <template>
   <section class="page-stack admin-page">
     <div class="page-heading">
-      <span class="section-eyebrow">Администрирование</span>
-      <h1>Панель управления</h1>
-      <p>Оценка покрытия данных и постановка задач обработки по выбранным предметным областям.</p>
+      <span class="section-eyebrow">{{ t('admin.panel.eyebrow') }}</span>
+      <h1>{{ t('routes.admin') }}</h1>
+      <p>{{ t('admin.panel.description') }}</p>
     </div>
 
     <AdminCoverageFilters
@@ -243,31 +242,31 @@ watch([selectionSignature, periodFrom, periodTo], () => {
     <section class="analytics-panel admin-worker-panel">
       <div class="analytics-panel__title">
         <div>
-          <span class="section-eyebrow">Контур обработки</span>
-          <h2>Worker и цепочные операции</h2>
+          <span class="section-eyebrow">{{ t('admin.panel.processing') }}</span>
+          <h2>{{ t('admin.panel.worker') }}</h2>
         </div>
         <span class="status-pill" :class="{ 'status-pill--warning': !worker?.canEnqueue }">
-          {{ worker?.canEnqueue ? 'Доступен' : 'Недоступен' }}
+          {{ worker?.canEnqueue ? t('admin.panel.available') : t('admin.panel.unavailable') }}
         </span>
       </div>
-      <p class="user-muted">{{ worker?.message ?? 'Проверка состояния worker...' }}</p>
+      <p class="user-muted">{{ worker?.message ?? t('admin.panel.checkingWorker') }}</p>
       <div class="admin-workflow-form">
         <label class="form-label">
-          Цикл обработки
+          {{ t('admin.panel.workflow') }}
           <select v-model="workflowPreset" class="form-select">
-            <option value="load-and-index">Загрузить и проиндексировать</option>
-            <option value="analytics">Пересчитать аналитику</option>
-            <option value="full">Полный цикл</option>
+            <option value="load-and-index">{{ presetLabel('load-and-index') }}</option>
+            <option value="analytics">{{ presetLabel('analytics') }}</option>
+            <option value="full">{{ presetLabel('full') }}</option>
           </select>
         </label>
         <button class="btn btn-primary" type="button" :disabled="!canEnqueue || workflowBusy" @click="enqueueWorkflow">
-          {{ workflowBusy ? 'Запуск...' : 'Запустить цикл' }}
+          {{ workflowBusy ? t('admin.panel.starting') : t('admin.panel.startWorkflow') }}
         </button>
       </div>
       <div v-if="workflows.length > 0" class="admin-workflow-list">
         <div v-for="workflow in workflows" :key="workflow.id" class="admin-workflow-item">
-          <strong>{{ workflow.preset }}</strong>
-          <span>{{ workflow.currentStage ?? workflow.status }}</span>
+          <strong>{{ presetLabel(workflow.preset) }}</strong>
+          <span>{{ workflow.currentStage ? panelLabel(workflow.currentStage) : workflowStatusLabel(workflow.status) }}</span>
           <small>{{ workflow.message }}</small>
         </div>
       </div>

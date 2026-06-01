@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import LoadingTimer from '@/components/LoadingTimer.vue'
 import type { DataCoverageCell, DataCoveragePanel, DataCoveragePanelKey } from '@/types/adminCoverage'
@@ -16,6 +17,7 @@ const props = defineProps<{
   taskWarnings: string[]
   actionBusy: boolean
 }>()
+const { t } = useI18n()
 
 const emit = defineEmits<{
   enqueue: [panelKey: DataCoveragePanelKey, periodFrom: string, periodTo: string]
@@ -50,12 +52,12 @@ const selected = computed(() => {
 
 const requestSummary = computed(() => {
   if (props.data === null || props.data.expectedTopics === 0) {
-    return 'Выберите темы для формирования задач.'
+    return t('admin.coverage.chooseTopics')
   }
   if (props.data.missingCount === 0) {
-    return 'Все выбранные темы покрыты в выбранном диапазоне.'
+    return t('admin.coverage.allCovered')
   }
-  return `Недостающие пары тема-период: ${formatInteger(props.data.missingCount)}.`
+  return t('admin.coverage.missing', { count: formatInteger(props.data.missingCount) })
 })
 const canEnqueue = computed(() =>
   props.workerAvailable &&
@@ -77,9 +79,16 @@ function cellFor(year: number, rowKey: string): DataCoverageCell | null {
 }
 
 function cellTitle(cell: DataCoverageCell): string {
-  const indexing = cell.loadedActual === undefined ? '' : ` Загружено: ${cell.loadedActual}/${cell.expected}.`
-  const queue = queued.value.has(cell.period) ? ' Задача поставлена в очередь.' : ''
-  return `Период: ${cell.period}. Обнаружено в БД: ${cell.actual}/${cell.expected}; покрытие: ${cell.percentage}%.${indexing}${queue}`
+  const loaded = cell.loadedActual === undefined ? '' : t('admin.coverage.loaded', { actual: cell.loadedActual, expected: cell.expected })
+  const queue = queued.value.has(cell.period) ? t('admin.coverage.queued') : ''
+  return t('admin.coverage.cellTitle', {
+    period: cell.period,
+    actual: cell.actual,
+    expected: cell.expected,
+    percentage: cell.percentage,
+    loaded,
+    queued: queue,
+  })
 }
 
 function selectCell(cell: DataCoverageCell): void {
@@ -119,15 +128,15 @@ function enqueue(): void {
   <section class="analytics-panel admin-coverage-panel">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Покрытие данных</span>
-        <h2>{{ data?.title ?? title }}</h2>
+        <span class="section-eyebrow">{{ t('admin.coverage.eyebrow') }}</span>
+        <h2>{{ title }}</h2>
       </div>
       <span v-if="data" class="status-pill">
         {{ formatPercent(data.expectedTopics === 0 ? 0 : 1 - data.missingCount / Math.max(1, data.expectedTopics * data.cells.length)) }}
       </span>
     </div>
 
-    <LoadingTimer v-if="loading" label="Загрузка покрытия данных..." />
+    <LoadingTimer v-if="loading" :label="t('admin.coverage.loading')" />
     <div v-else-if="error" class="alert alert-danger analytics-alert" role="alert">{{ error }}</div>
     <div v-else-if="data" class="admin-coverage-panel__body">
       <div v-if="taskWarnings.length > 0" class="alert alert-warning analytics-alert" role="alert">
@@ -137,7 +146,7 @@ function enqueue(): void {
         <table class="admin-coverage-table">
           <thead>
             <tr>
-              <th scope="col">{{ data.periodKind === 'quarter' ? 'Квартал' : 'Месяц' }}</th>
+              <th scope="col">{{ data.periodKind === 'quarter' ? t('admin.coverage.quarter') : t('admin.coverage.month') }}</th>
               <th v-for="year in data.years" :key="year" scope="col">{{ year }}</th>
             </tr>
           </thead>
@@ -171,12 +180,12 @@ function enqueue(): void {
       <div class="admin-coverage-actions">
         <span>{{ requestSummary }}</span>
         <button class="btn btn-primary" type="button" :disabled="!canEnqueue" @click="enqueue">
-          {{ actionBusy ? 'Постановка...' : 'Поставить задачи' }}
+          {{ actionBusy ? t('admin.coverage.enqueuing') : t('admin.coverage.enqueue') }}
         </button>
       </div>
     </div>
     <div v-else class="analytics-empty">
-      <p>Выберите темы для расчета покрытия.</p>
+      <p>{{ t('admin.coverage.empty') }}</p>
     </div>
   </section>
 </template>

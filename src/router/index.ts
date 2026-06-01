@@ -11,6 +11,7 @@ import RecommendationsView from '@/views/RecommendationsView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import SubjectAreaView from '@/views/SubjectAreaView.vue'
 import { useAuthStore } from '@/stores/auth'
+import { i18n } from '@/i18n'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -19,7 +20,7 @@ const routes: RouteRecordRaw[] = [
     component: LoginView,
     meta: {
       publicOnly: true,
-      title: 'Вход',
+      titleKey: 'routes.login',
     },
   },
   {
@@ -28,7 +29,7 @@ const routes: RouteRecordRaw[] = [
     component: RegisterView,
     meta: {
       publicOnly: true,
-      title: 'Регистрация',
+      titleKey: 'routes.register',
     },
   },
   {
@@ -47,7 +48,7 @@ const routes: RouteRecordRaw[] = [
         name: 'directions',
         component: DirectionsView,
         meta: {
-          title: 'Научные направления',
+          titleKey: 'routes.directions',
         },
       },
       {
@@ -55,7 +56,7 @@ const routes: RouteRecordRaw[] = [
         name: 'subject-area',
         component: SubjectAreaView,
         meta: {
-          title: 'Предметная область',
+          titleKey: 'routes.subjectArea',
         },
       },
       {
@@ -63,7 +64,7 @@ const routes: RouteRecordRaw[] = [
         name: 'recommendations',
         component: RecommendationsView,
         meta: {
-          title: 'Рекомендации',
+          titleKey: 'routes.recommendations',
         },
       },
       {
@@ -71,7 +72,7 @@ const routes: RouteRecordRaw[] = [
         name: 'favorites',
         component: FavoritesView,
         meta: {
-          title: 'Избранное',
+          titleKey: 'routes.favorites',
         },
       },
       {
@@ -79,7 +80,7 @@ const routes: RouteRecordRaw[] = [
         name: 'profile',
         component: ProfileView,
         meta: {
-          title: 'Личный кабинет',
+          titleKey: 'routes.profile',
         },
       },
       {
@@ -88,7 +89,7 @@ const routes: RouteRecordRaw[] = [
         component: AdminPanelView,
         meta: {
           requiresAdmin: true,
-          title: 'Панель управления',
+          titleKey: 'routes.admin',
         },
       },
       {
@@ -97,7 +98,7 @@ const routes: RouteRecordRaw[] = [
         component: AdminUsersView,
         meta: {
           requiresAdmin: true,
-          title: 'Пользователи',
+          titleKey: 'routes.users',
         },
       },
     ],
@@ -156,7 +157,7 @@ router.beforeEach(async (to) => {
 })
 
 router.afterEach((to) => {
-  document.title = typeof to.meta.title === 'string' ? `${to.meta.title} | Scinside` : 'Scinside'
+  document.title = typeof to.meta.titleKey === 'string' ? `${i18n.global.t(to.meta.titleKey)} | Scinside` : 'Scinside'
 })
 
 export default router

@@ -26,6 +26,9 @@ export interface TrackedResponse extends TaxonomyTagGroups {
 
 export interface TrackedOptionsResponse {
   items: TaxonomyTag[]
+  offset: number
+  limit: number
+  hasMore: boolean
 }
 
 export interface PaperSummary {

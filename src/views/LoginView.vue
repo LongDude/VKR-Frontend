@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+import { technicalError } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
@@ -39,7 +42,7 @@ async function handleSubmit(): Promise<void> {
   errorMessage.value = ''
 
   if (!email.value.trim() || !password.value) {
-    errorMessage.value = 'Укажите email и пароль.'
+    errorMessage.value = t('auth.login.required')
     return
   }
 
@@ -52,7 +55,7 @@ async function handleSubmit(): Promise<void> {
     })
     await router.push(targetPath.value)
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Не удалось выполнить вход.'
+    errorMessage.value = technicalError(t('auth.login.error'), error)
   } finally {
     isSubmitting.value = false
   }
@@ -68,8 +71,8 @@ async function handleSubmit(): Promise<void> {
       </div>
 
       <div class="auth-heading">
-        <h1>Вход</h1>
-        <p>Авторизуйтесь, чтобы открыть мониторинг научных трендов.</p>
+        <h1>{{ t('routes.login') }}</h1>
+        <p>{{ t('auth.login.description') }}</p>
       </div>
 
       <form class="auth-form" novalidate @submit.prevent="handleSubmit">
@@ -78,7 +81,7 @@ async function handleSubmit(): Promise<void> {
         </div>
 
         <div>
-          <label class="form-label" for="login-email">Email</label>
+          <label class="form-label" for="login-email">{{ t('common.email') }}</label>
           <input
             id="login-email"
             v-model="email"
@@ -91,7 +94,7 @@ async function handleSubmit(): Promise<void> {
         </div>
 
         <div>
-          <label class="form-label" for="login-password">Пароль</label>
+          <label class="form-label" for="login-password">{{ t('auth.password') }}</label>
           <input
             id="login-password"
             v-model="password"
@@ -103,13 +106,13 @@ async function handleSubmit(): Promise<void> {
         </div>
 
         <button class="btn btn-primary auth-submit" type="submit" :disabled="isSubmitting">
-          {{ isSubmitting ? 'Вход...' : 'Войти' }}
+          {{ isSubmitting ? t('auth.login.submitting') : t('auth.login.submit') }}
         </button>
       </form>
 
       <p class="auth-switch">
-        Нет аккаунта?
-        <RouterLink :to="registerRoute">Зарегистрироваться</RouterLink>
+        {{ t('auth.login.noAccount') }}
+        <RouterLink :to="registerRoute">{{ t('auth.login.register') }}</RouterLink>
       </p>
     </section>
   </main>

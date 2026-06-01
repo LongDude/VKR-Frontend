@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import LoadingTimer from '@/components/LoadingTimer.vue'
 import PaperMetadataModal from '@/components/papers/PaperMetadataModal.vue'
 import TaxonomyTagCloud from '@/components/user/TaxonomyTagCloud.vue'
+import { technicalError } from '@/i18n'
 import { emptySelectedTags, userToolsApi } from '@/services/userToolsApi'
 import type { PaperMetadata } from '@/types/topicAnalytics'
 import type {
@@ -15,6 +17,7 @@ import type {
   TaxonomyTagType,
 } from '@/types/userTools'
 import { formatInteger, formatPercent } from '@/utils/fieldAnalyticsFormatters'
+import { strategyLabel } from '@/utils/serverLabels'
 
 const tempTags = ref<TaxonomyTagGroups>({
   domains: [],
@@ -22,6 +25,7 @@ const tempTags = ref<TaxonomyTagGroups>({
   subfields: [],
   topics: [],
 })
+const { t } = useI18n()
 const recommendations = ref<RecommendationItem[]>([])
 const total = ref(0)
 const strategy = ref<string | null>(null)
@@ -109,7 +113,7 @@ async function loadRecommendations(): Promise<void> {
     mlErrors.value = response.mlStatus.errors
   } catch (error) {
     if (requestId === recommendationRequestId) {
-      errorMessage.value = error instanceof Error ? error.message : 'Не удалось получить рекомендации.'
+      errorMessage.value = technicalError(t('recommendations.loadError'), error)
       recommendations.value = []
       total.value = 0
     }
@@ -150,7 +154,7 @@ async function openPaper(paperId: number): Promise<void> {
     }
   } catch (error) {
     if (requestId === paperRequestId) {
-      modalError.value = error instanceof Error ? error.message : 'Не удалось загрузить статью.'
+      modalError.value = technicalError(t('paper.loadError'), error)
     }
   } finally {
     if (requestId === paperRequestId) {
@@ -189,7 +193,7 @@ async function toggleFavorite(paperId: number, nextValue: boolean): Promise<void
       : await userToolsApi.removeFavorite(paperId)
     updateFavoriteState(paperId, response.isFavorite)
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Не удалось обновить избранное.'
+    errorMessage.value = technicalError(t('recommendations.favoriteError'), error)
   } finally {
     favoriteBusyId.value = null
   }
@@ -205,14 +209,14 @@ async function toggleModalFavorite(paperId: number, nextValue: boolean): Promise
       : await userToolsApi.removeFavorite(paperId)
     updateFavoriteState(paperId, response.isFavorite)
   } catch (error) {
-    modalError.value = error instanceof Error ? error.message : 'Не удалось обновить избранное.'
+    modalError.value = technicalError(t('recommendations.favoriteError'), error)
   } finally {
     modalFavoriteBusy.value = false
   }
 }
 
 function formatScore(value: number | null): string {
-  return value === null ? 'н/д' : formatPercent(value)
+  return value === null ? t('common.notAvailable') : formatPercent(value)
 }
 
 function keywordLabels(value: unknown, maxItems = 6): string[] {
@@ -240,15 +244,15 @@ function keywordLabels(value: unknown, maxItems = 6): string[] {
 <template>
   <section class="page-stack user-tools-page">
     <div class="page-heading">
-      <span class="section-eyebrow">Персональная подборка</span>
-      <h1>Рекомендации</h1>
-      <p>Проиндексированные статьи ранжируются по профилю пользователя, выбранным тегам, новизне, тренду и цитируемости.</p>
+      <span class="section-eyebrow">{{ t('recommendations.eyebrow') }}</span>
+      <h1>{{ t('routes.recommendations') }}</h1>
+      <p>{{ t('recommendations.description') }}</p>
     </div>
 
     <TaxonomyTagCloud
       :groups="tempTags"
-      title="Временные теги поиска"
-      hint="Эти теги влияют только на текущий запрос рекомендаций и не сохраняются в профиль."
+      :title="t('recommendations.tempTags')"
+      :hint="t('recommendations.tempTagsHint')"
       @add="addTemporaryTag"
       @remove="removeTemporaryTag"
     />
@@ -256,7 +260,7 @@ function keywordLabels(value: unknown, maxItems = 6): string[] {
     <section class="analytics-panel recommendation-controls">
       <div class="recommendation-controls__row">
         <label class="form-label">
-          Лимит
+          {{ t('recommendations.limit') }}
           <select v-model.number="limit" class="form-select">
             <option :value="10">10</option>
             <option :value="20">20</option>
@@ -265,14 +269,14 @@ function keywordLabels(value: unknown, maxItems = 6): string[] {
         </label>
         <label class="form-check recommendation-check">
           <input v-model="excludeFavorites" class="form-check-input" type="checkbox" />
-          <span class="form-check-label">Исключать избранное</span>
+          <span class="form-check-label">{{ t('recommendations.excludeFavorites') }}</span>
         </label>
         <button class="btn btn-primary" type="button" :disabled="loading" @click="refreshRecommendations">
-          {{ loading ? 'Загрузка...' : 'Показать рекомендации' }}
+          {{ loading ? t('common.loading') : t('recommendations.show') }}
         </button>
       </div>
       <p class="user-muted mb-0">
-        {{ hasTemporaryTags ? 'Запрос будет усилен выбранными временными тегами.' : 'Без временных тегов используется сохраненный профиль пользователя.' }}
+        {{ hasTemporaryTags ? t('recommendations.boosted') : t('recommendations.profileBased') }}
       </p>
     </section>
 
@@ -284,15 +288,15 @@ function keywordLabels(value: unknown, maxItems = 6): string[] {
     <section class="analytics-panel">
       <header class="analytics-panel__header">
         <div>
-          <h2>Подборка статей</h2>
-          <p class="user-muted">Найдено: {{ formatInteger(total) }}<span v-if="strategy"> · {{ strategy }}</span></p>
+          <h2>{{ t('recommendations.selection') }}</h2>
+          <p class="user-muted">{{ t('recommendations.found', { total: formatInteger(total) }) }}<span v-if="strategy"> · {{ strategyLabel(strategy) }}</span></p>
         </div>
       </header>
 
-      <LoadingTimer v-if="loading && recommendations.length === 0" label="Расчет рекомендаций..." />
-      <LoadingTimer v-else-if="loading" label="Обновление рекомендаций..." compact />
+      <LoadingTimer v-if="loading && recommendations.length === 0" :label="t('recommendations.calculating')" />
+      <LoadingTimer v-else-if="loading" :label="t('recommendations.refreshing')" compact />
       <div v-else-if="recommendations.length === 0" class="analytics-empty">
-        Нажмите «Показать рекомендации», чтобы сформировать подборку.
+        {{ t('recommendations.empty') }}
       </div>
 
       <div v-else class="recommendation-list">
@@ -309,14 +313,14 @@ function keywordLabels(value: unknown, maxItems = 6): string[] {
                 :disabled="favoriteBusyId === item.paper.id"
                 @click="toggleFavorite(item.paper.id, !item.paper.isFavorite)"
               >
-                {{ favoriteBusyId === item.paper.id ? 'Сохранение...' : item.paper.isFavorite ? 'Удалить из избранного' : 'В избранное' }}
+                {{ favoriteBusyId === item.paper.id ? t('common.saving') : item.paper.isFavorite ? t('paper.favoriteRemove') : t('paper.favoriteAdd') }}
               </button>
             </header>
             <div v-if="keywordLabels(item.paper.extractedKeywords).length > 0" class="paper-keyword-list">
               <span v-for="keyword in keywordLabels(item.paper.extractedKeywords)" :key="keyword">{{ keyword }}</span>
             </div>
             <p>
-              {{ item.paper.publicationDate ?? item.paper.publicationYear ?? 'н/д' }}
+              {{ item.paper.publicationDate ?? item.paper.publicationYear ?? t('common.notAvailable') }}
               <span v-if="item.paper.authors"> · {{ item.paper.authors }}</span>
             </p>
             <p v-if="item.reason" class="recommendation-item__reason">{{ item.reason }}</p>
@@ -324,45 +328,45 @@ function keywordLabels(value: unknown, maxItems = 6): string[] {
 
           <div class="recommendation-score">
             <strong>{{ formatScore(item.score) }}</strong>
-            <span>релевантность</span>
+            <span>{{ t('recommendations.relevance') }}</span>
           </div>
 
           <dl class="score-breakdown">
             <div>
-              <dt>Профиль</dt>
+              <dt>{{ t('recommendations.profile') }}</dt>
               <dd>{{ formatScore(item.scoreDetails.profileScore ?? item.scoreDetails.semanticScore) }}</dd>
             </div>
             <div>
-              <dt>Теги</dt>
+              <dt>{{ t('recommendations.tags') }}</dt>
               <dd>{{ formatScore(item.scoreDetails.tagMatchScore) }}</dd>
             </div>
             <div>
-              <dt>Тренд</dt>
+              <dt>{{ t('recommendations.trend') }}</dt>
               <dd>{{ formatScore(item.scoreDetails.trendScore) }}</dd>
             </div>
             <div>
-              <dt>Новизна</dt>
+              <dt>{{ t('recommendations.novelty') }}</dt>
               <dd>{{ formatScore(item.scoreDetails.recencyScore) }}</dd>
             </div>
             <div>
-              <dt>Цитирования</dt>
+              <dt>{{ t('common.citations') }}</dt>
               <dd>{{ formatScore(item.scoreDetails.citationScore) }} | {{ formatInteger(item.paper.citedBy) }}</dd>
             </div>
           </dl>
 
           <div class="recommendation-item__actions">
-            <span>Цитирования | {{ formatInteger(item.paper.citedBy) }}</span>
+            <span>{{ t('common.citations') }} | {{ formatInteger(item.paper.citedBy) }}</span>
           </div>
         </article>
       </div>
 
-      <nav v-if="recommendations.length > 0" class="user-pagination" aria-label="Пагинация рекомендаций">
+      <nav v-if="recommendations.length > 0" class="user-pagination" :aria-label="t('recommendations.paginationAria')">
         <button class="btn btn-light border btn-sm" type="button" :disabled="currentPage <= 1 || loading" @click="changePage(currentPage - 1)">
-          Назад
+          {{ t('common.back') }}
         </button>
-        <span>Страница {{ currentPage }} из {{ totalPages }}</span>
+        <span>{{ t('common.pageOf', { current: currentPage, total: totalPages }) }}</span>
         <button class="btn btn-light border btn-sm" type="button" :disabled="currentPage >= totalPages || loading" @click="changePage(currentPage + 1)">
-          Вперед
+          {{ t('common.next') }}
         </button>
       </nav>
     </section>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EChartsOption } from 'echarts'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import EChartPanel from '@/components/analytics/EChartPanel.vue'
 import type { TrendDecompositionMetric } from '@/types/topicAnalytics'
@@ -14,6 +15,7 @@ const props = defineProps<{
   items: TrendDecompositionMetric[]
   error?: string | null
 }>()
+const { t } = useI18n()
 
 const rows = computed(() => props.items)
 const hasRadarValues = computed(() => props.items.some((item) => item.normalized !== null))
@@ -27,18 +29,18 @@ const trendSummary = computed(() => {
   const burstScore = metricValue('burst_score')
 
   if (publicationGrowth === null && shareGrowth === null && burstScore === null) {
-    return 'Тренд не рассчитан: недостаточно данных для сравнения с предыдущим периодом.'
+    return t('topicAnalytics.trend.noComparison')
   }
 
   if ((shareGrowth ?? 0) > 0.005 || (burstScore ?? 0) > 0.75) {
-    return 'График объясняет усиливающийся тренд: тема увеличивает долю внутри Subfield или показывает выраженный burst.'
+    return t('topicAnalytics.trend.growing')
   }
 
   if ((shareGrowth ?? 0) < -0.005 || (publicationGrowth ?? 0) < -0.1) {
-    return 'График объясняет ослабевающий тренд: публикационная активность или доля темы снижается относительно предыдущего окна.'
+    return t('topicAnalytics.trend.declining')
   }
 
-  return 'График объясняет стабильный тренд: изменения активности и доли темы находятся около нейтрального уровня.'
+  return t('topicAnalytics.trend.stable')
 })
 
 const option = computed<EChartsOption>(() => ({
@@ -55,10 +57,10 @@ const option = computed<EChartsOption>(() => ({
     formatter: () => {
       const rows = props.items.map((item) => {
         const label = metricLabels[item.key] ?? item.label
-        const value = item.normalized === null ? 'н/д' : item.normalized.toFixed(2)
+        const value = item.normalized === null ? t('common.notAvailable') : item.normalized.toFixed(2)
         return `${label}: ${value}`
       })
-      return [`<strong>Вклад факторов</strong>`, ...rows].join('<br>')
+      return [`<strong>${t('topicAnalytics.trend.factors')}</strong>`, ...rows].join('<br>')
     },
     trigger: 'item',
   },
@@ -69,7 +71,7 @@ const option = computed<EChartsOption>(() => ({
       },
       data: [
         {
-          name: 'Вклад факторов',
+          name: t('topicAnalytics.trend.factors'),
           value: props.items.map((item) => item.normalized ?? 0),
         },
       ],
@@ -90,8 +92,8 @@ function metricValue(key: string): number | null {
   <section class="analytics-panel trend-decomposition">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Декомпозиция тренда</span>
-        <h2>Объяснение изменения тренда</h2>
+        <span class="section-eyebrow">{{ t('topicAnalytics.trend.title') }}</span>
+        <h2>{{ t('topicAnalytics.trend.explanation') }}</h2>
         <p class="trend-decomposition__summary">{{ trendSummary }}</p>
       </div>
     </div>
@@ -102,13 +104,13 @@ function metricValue(key: string): number | null {
 
     <div class="trend-decomposition__grid">
       <EChartPanel v-if="hasRadarValues" :option="option" height="340px" />
-      <div v-else class="analytics-empty">Нет рассчитанных факторов тренда.</div>
+      <div v-else class="analytics-empty">{{ t('topicAnalytics.trend.noFactors') }}</div>
 
       <div class="trend-metrics">
         <div v-for="item in rows" :key="item.key" class="trend-metrics__row">
           <span>{{ metricLabels[item.key] ?? item.label }}</span>
           <strong>{{ formatMetricValue(item.value, item.unit) }}</strong>
-          <em>{{ item.level ? levelLabels[item.level] : 'н/д' }}</em>
+          <em>{{ item.level ? levelLabels[item.level] : t('common.notAvailable') }}</em>
         </div>
       </div>
     </div>

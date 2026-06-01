@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import LoadingTimer from '@/components/LoadingTimer.vue'
 import TaxonomyTagCloud from '@/components/user/TaxonomyTagCloud.vue'
+import { technicalError } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 import { userToolsApi } from '@/services/userToolsApi'
 import type { TaxonomyTag, TaxonomyTagGroups, TaxonomyTagType } from '@/types/userTools'
 
 const auth = useAuthStore()
+const { t } = useI18n()
 const user = auth.user
 const displayName = auth.displayName
 const initials = auth.initials
@@ -62,10 +65,10 @@ async function saveProfile(): Promise<void> {
       name: editForm.name,
       email: editForm.email,
     })
-    profileMessage.value = 'Профиль обновлен.'
+    profileMessage.value = t('profile.updated')
     editOpen.value = false
   } catch (error) {
-    profileError.value = error instanceof Error ? error.message : 'Не удалось обновить профиль.'
+    profileError.value = technicalError(t('profile.updateError'), error)
   } finally {
     profileBusy.value = false
   }
@@ -81,9 +84,9 @@ async function savePassword(): Promise<void> {
     passwordForm.currentPassword = ''
     passwordForm.newPassword = ''
     passwordForm.newPasswordConfirmation = ''
-    passwordMessage.value = 'Пароль изменен.'
+    passwordMessage.value = t('profile.passwordChanged')
   } catch (error) {
-    passwordError.value = error instanceof Error ? error.message : 'Не удалось изменить пароль.'
+    passwordError.value = technicalError(t('profile.passwordError'), error)
   } finally {
     passwordBusy.value = false
   }
@@ -103,7 +106,7 @@ async function loadTracked(): Promise<void> {
     }
     trackedWarnings.value = response.warnings ?? []
   } catch (error) {
-    trackedError.value = error instanceof Error ? error.message : 'Не удалось загрузить отслеживаемые теги.'
+    trackedError.value = technicalError(t('profile.trackedLoadError'), error)
   } finally {
     trackedBusy.value = false
   }
@@ -124,7 +127,7 @@ async function addTracked(type: TaxonomyTagType, item: TaxonomyTag): Promise<voi
     }
     trackedWarnings.value = response.warnings ?? []
   } catch (error) {
-    trackedError.value = error instanceof Error ? error.message : 'Не удалось добавить тег.'
+    trackedError.value = technicalError(t('profile.trackedAddError'), error)
   } finally {
     trackedBusy.value = false
   }
@@ -144,7 +147,7 @@ async function removeTracked(type: TaxonomyTagType, id: number): Promise<void> {
     }
     trackedWarnings.value = response.warnings ?? []
   } catch (error) {
-    trackedError.value = error instanceof Error ? error.message : 'Не удалось удалить тег.'
+    trackedError.value = technicalError(t('profile.trackedRemoveError'), error)
   } finally {
     trackedBusy.value = false
   }
@@ -158,9 +161,9 @@ onMounted(() => {
 <template>
   <section class="page-stack user-tools-page">
     <div class="page-heading">
-      <span class="section-eyebrow">Профиль пользователя</span>
-      <h1>Личный кабинет</h1>
-      <p>Данные аккаунта, пароль и устойчивые научные интересы для рекомендательной выдачи.</p>
+      <span class="section-eyebrow">{{ t('profile.eyebrow') }}</span>
+      <h1>{{ t('routes.profile') }}</h1>
+      <p>{{ t('profile.description') }}</p>
     </div>
 
     <div class="profile-panel">
@@ -171,27 +174,27 @@ onMounted(() => {
           <p>{{ user?.email }}</p>
         </div>
         <button class="btn btn-outline-primary ms-lg-auto" type="button" @click="openEdit">
-          Редактировать
+          {{ t('profile.edit') }}
         </button>
       </div>
 
       <dl class="profile-details">
         <div>
-          <dt>Email</dt>
-          <dd v-if="!editOpen">{{ user?.email ?? 'Не указан' }}</dd>
+          <dt>{{ t('common.email') }}</dt>
+          <dd v-if="!editOpen">{{ user?.email ?? t('profile.emailMissing') }}</dd>
           <dd v-else>
             <input v-model="editForm.email" class="form-control" type="email" autocomplete="email" required />
           </dd>
         </div>
         <div>
-          <dt>Имя</dt>
-          <dd v-if="!editOpen">{{ user?.name || 'Не указано' }}</dd>
+          <dt>{{ t('profile.name') }}</dt>
+          <dd v-if="!editOpen">{{ user?.name || t('profile.nameMissing') }}</dd>
           <dd v-else>
             <input v-model="editForm.name" class="form-control" type="text" autocomplete="name" />
           </dd>
         </div>
         <div>
-          <dt>Роль</dt>
+          <dt>{{ t('profile.role') }}</dt>
           <dd>{{ roleLabel }}</dd>
         </div>
       </dl>
@@ -199,10 +202,10 @@ onMounted(() => {
       <form v-if="editOpen" @submit.prevent="saveProfile">
         <div class="user-form-actions">
           <button class="btn btn-primary" type="submit" :disabled="profileBusy">
-            {{ profileBusy ? 'Сохранение...' : 'Сохранить' }}
+            {{ profileBusy ? t('common.saving') : t('common.save') }}
           </button>
           <button class="btn btn-light border" type="button" :disabled="profileBusy" @click="editOpen = false">
-            Отмена
+            {{ t('common.cancel') }}
           </button>
         </div>
       </form>
@@ -213,24 +216,24 @@ onMounted(() => {
 
     <section class="profile-panel">
       <header class="user-section-header">
-        <h2>Изменение пароля</h2>
+        <h2>{{ t('profile.passwordTitle') }}</h2>
       </header>
       <form class="user-form-vertical" @submit.prevent="savePassword">
         <label class="form-label">
-          Текущий пароль
+          {{ t('profile.currentPassword') }}
           <input v-model="passwordForm.currentPassword" class="form-control" type="password" autocomplete="current-password" required />
         </label>
         <label class="form-label">
-          Новый пароль
+          {{ t('profile.newPassword') }}
           <input v-model="passwordForm.newPassword" class="form-control" type="password" autocomplete="new-password" minlength="8" required />
         </label>
         <label class="form-label">
-          Подтверждение
+          {{ t('profile.confirmation') }}
           <input v-model="passwordForm.newPasswordConfirmation" class="form-control" type="password" autocomplete="new-password" minlength="8" required />
         </label>
         <div class="user-form-actions">
           <button class="btn btn-primary" type="submit" :disabled="passwordBusy">
-            {{ passwordBusy ? 'Сохранение...' : 'Изменить пароль' }}
+            {{ passwordBusy ? t('common.saving') : t('profile.changePassword') }}
           </button>
         </div>
       </form>
@@ -240,16 +243,16 @@ onMounted(() => {
 
     <LoadingTimer
       v-if="trackedBusy && !hasTrackedTags"
-      label="Загрузка отслеживаемых интересов..."
+      :label="t('profile.trackedLoading')"
     />
-    <LoadingTimer v-else-if="trackedBusy" label="Обновление отслеживаемых интересов..." compact />
+    <LoadingTimer v-else-if="trackedBusy" :label="t('profile.trackedRefreshing')" compact />
 
     <TaxonomyTagCloud
       v-if="!trackedBusy || hasTrackedTags"
       :groups="tracked"
       :busy="trackedBusy"
-      title="Отслеживаемые научные интересы"
-      hint="Эти теги сохраняются в профиль и используются при построении пользовательских рекомендаций."
+      :title="t('profile.trackedTitle')"
+      :hint="t('profile.trackedHint')"
       @add="addTracked"
       @remove="removeTracked"
     />

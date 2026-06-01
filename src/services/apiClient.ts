@@ -1,3 +1,5 @@
+import { i18n } from '@/i18n'
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -36,7 +38,7 @@ function resolveErrorMessage(payload: unknown, status: number): string {
     return payload.error
   }
 
-  return `Ошибка запроса (${status}).`
+  return `${i18n.global.t('errors.request')} (${status}).`
 }
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {

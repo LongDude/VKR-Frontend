@@ -1,10 +1,11 @@
 import type { DecompositionLevel, RelatedTopicRelation, TopicDashboardStatus } from '@/types/topicAnalytics'
+import { i18n } from '@/i18n'
 
 export const topicDashboardStatusLabels: Record<TopicDashboardStatus, string> = {
-  emerging: 'Появляющаяся',
-  popular: 'Популярная',
-  declining: 'Теряет долю',
-  stable: 'Стабильная',
+  emerging: i18n.global.t('statuses.dashboard.emerging'),
+  popular: i18n.global.t('statuses.dashboard.popular'),
+  declining: i18n.global.t('statuses.dashboard.declining'),
+  stable: i18n.global.t('statuses.dashboard.stable'),
 }
 
 export const topicDashboardStatusClasses: Record<TopicDashboardStatus, string> = {
@@ -15,29 +16,29 @@ export const topicDashboardStatusClasses: Record<TopicDashboardStatus, string> =
 }
 
 export const relationLabels: Record<RelatedTopicRelation, string> = {
-  'same subfield': 'Та же подобласть',
-  'embedding similarity': 'Близость эмбеддингов',
-  'shared keyphrases': 'Общие ключевые фразы',
+  'same subfield': i18n.global.t('metrics.relations.sameSubfield'),
+  'embedding similarity': i18n.global.t('metrics.relations.embeddingSimilarity'),
+  'shared keyphrases': i18n.global.t('metrics.relations.sharedKeyphrases'),
 }
 
 export const metricLabels: Record<string, string> = {
-  publication_growth: 'Рост публикаций',
-  share_growth: 'Рост доли',
-  burst_score: 'Burst score',
-  citation_velocity: 'Скорость цитирования',
-  keyphrase_novelty: 'Новизна ключевых фраз',
-  semantic_drift: 'Семантический сдвиг',
+  publication_growth: i18n.global.t('metrics.decomposition.publicationGrowth'),
+  share_growth: i18n.global.t('metrics.decomposition.shareGrowth'),
+  burst_score: i18n.global.t('metrics.decomposition.burstScore'),
+  citation_velocity: i18n.global.t('metrics.decomposition.citationVelocity'),
+  keyphrase_novelty: i18n.global.t('metrics.decomposition.keyphraseNovelty'),
+  semantic_drift: i18n.global.t('metrics.decomposition.semanticDrift'),
 }
 
 export const levelLabels: Record<DecompositionLevel, string> = {
-  low: 'низкий',
-  medium: 'средний',
-  high: 'высокий',
+  low: i18n.global.t('statuses.levels.low'),
+  medium: i18n.global.t('statuses.levels.medium'),
+  high: i18n.global.t('statuses.levels.high'),
 }
 
 export function formatMetricValue(value: number | null, unit: string): string {
   if (value === null) {
-    return 'н/д'
+    return i18n.global.t('common.notAvailable')
   }
 
   if (unit === 'percent') {
@@ -50,17 +51,19 @@ export function formatMetricValue(value: number | null, unit: string): string {
   }
 
   if (unit === 'percentage_point') {
-    return `${new Intl.NumberFormat('ru-RU', {
+    const formatted = new Intl.NumberFormat('ru-RU', {
       maximumFractionDigits: 1,
       minimumFractionDigits: 1,
       signDisplay: 'always',
-    }).format(value * 100)} п.п.`
+    }).format(value * 100)
+    return i18n.global.t('common.percentagePointsShort', { value: formatted })
   }
 
   if (unit === 'citations_per_month') {
-    return `${new Intl.NumberFormat('ru-RU', {
+    const formatted = new Intl.NumberFormat('ru-RU', {
       maximumFractionDigits: 2,
-    }).format(value)} цит./мес.`
+    }).format(value)
+    return i18n.global.t('common.citationsPerMonth', { value: formatted })
   }
 
   if (unit === 'score') {

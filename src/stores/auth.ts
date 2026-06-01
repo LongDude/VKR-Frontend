@@ -8,6 +8,7 @@ import type {
   UpdatePasswordPayload,
   UpdateProfilePayload,
 } from '@/types/auth'
+import { i18n } from '@/i18n'
 
 const user = ref<AuthUser | null>(null)
 const initialized = ref(false)
@@ -29,9 +30,9 @@ const primaryRole = computed(() => {
 const roleLabel = computed(() => {
   switch (primaryRole.value) {
     case 'ROLE_ADMIN':
-      return 'Администратор'
+      return i18n.global.t('roles.admin')
     case 'ROLE_USER':
-      return 'Исследователь'
+      return i18n.global.t('roles.user')
     default:
       return primaryRole.value
   }
@@ -40,7 +41,7 @@ const isAdmin = computed(() => primaryRole.value === 'ROLE_ADMIN' || user.value?
 
 const displayName = computed(() => {
   const name = user.value?.name?.trim()
-  return name || user.value?.email || 'Пользователь'
+  return name || user.value?.email || i18n.global.t('roles.defaultUser')
 })
 
 const initials = computed(() => {

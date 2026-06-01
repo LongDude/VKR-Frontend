@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EChartsOption } from 'echarts'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import EChartPanel from '@/components/analytics/EChartPanel.vue'
 import type { TopicActivity, TopicActivityPoint, TopicForecastPoint } from '@/types/topicAnalytics'
@@ -15,6 +16,12 @@ const props = defineProps<{
   activity: TopicActivity
   mlError?: string | null
 }>()
+
+const { t } = useI18n()
+const decimalFormatter = new Intl.NumberFormat('ru-RU', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 0,
+})
 
 type TooltipParam = {
   axisValue?: string
@@ -62,7 +69,7 @@ const option = computed<EChartsOption>(() => {
     yAxis: [
       {
         minInterval: 1,
-        name: 'Публикации',
+        name: t('common.publications'),
         type: 'value',
       },
       {
@@ -70,20 +77,20 @@ const option = computed<EChartsOption>(() => {
           formatter: (value: number) => formatPercent(value),
         },
         max: (value: { max: number }) => Math.max(0.01, value.max * 1.2),
-        name: 'Доля',
+        name: t('common.share'),
         type: 'value',
       },
     ],
     series: [
       {
-        name: 'Публикации',
+        name: t('common.publications'),
         type: 'line',
         data: periods.map((period) => observedByPeriod.get(period)?.papers ?? null),
         symbolSize: 5,
         yAxisIndex: 0,
       },
       {
-        name: 'Прогноз публикаций',
+        name: `${t('analytics.forecast')}: ${t('common.publications').toLocaleLowerCase('ru-RU')}`,
         type: 'line',
         data: periods.map((period) => forecastByPeriod.get(period)?.forecastCount ?? (period === anchor?.period ? anchor.papers : null)),
         lineStyle: {
@@ -94,7 +101,7 @@ const option = computed<EChartsOption>(() => {
         yAxisIndex: 0,
       },
       {
-        name: 'Доля в Subfield',
+        name: t('topicAnalytics.activity.shareInSubfield'),
         type: 'line',
         data: periods.map((period) => observedByPeriod.get(period)?.share ?? null),
         lineStyle: {
@@ -105,7 +112,7 @@ const option = computed<EChartsOption>(() => {
         yAxisIndex: 1,
       },
       {
-        name: 'Прогноз доли',
+        name: `${t('analytics.forecast')}: ${t('common.share').toLocaleLowerCase('ru-RU')}`,
         type: 'line',
         data: periods.map((period) => forecastByPeriod.get(period)?.forecastShare ?? (period === anchor?.period ? anchor.share : null)),
         lineStyle: {
@@ -147,13 +154,22 @@ function formatTooltip(params: unknown): string {
 
   return [title, ...rows].join('<br />')
 }
+
+function formatQualityValue(value: number, metric: 'mae' | 'mape' | 'smape', share: boolean): string {
+  if (metric === 'mae') {
+    const formatted = decimalFormatter.format(share ? value * 100 : value)
+    return share ? t('forecastQuality.percentagePoints', { value: formatted }) : formatted
+  }
+
+  return `${decimalFormatter.format(value)}%`
+}
 </script>
 
 <template>
   <section class="analytics-panel topic-activity-panel">
     <div class="analytics-panel__title">
       <div>
-        <span class="section-eyebrow">Динамика и прогноз</span>
+        <span class="section-eyebrow">{{ t('topicAnalytics.activity.eyebrow') }}</span>
         <h2>{{ topicName }}</h2>
       </div>
     </div>
@@ -163,6 +179,39 @@ function formatTooltip(params: unknown): string {
     </div>
 
     <EChartPanel v-if="hasData" :option="option" height="390px" />
-    <div v-else class="analytics-empty">Нет данных активности за выбранный период.</div>
+    <div v-else class="analytics-empty">{{ t('topicAnalytics.activity.empty') }}</div>
+
+    <section class="forecast-quality">
+      <h3>{{ t('forecastQuality.title') }}</h3>
+      <div class="forecast-quality__grid">
+        <article v-for="group in (['activity', 'share'] as const)" :key="group" class="forecast-quality__group">
+          <h4>
+            {{ t(`forecastQuality.${group}`) }}
+            <small>{{ activity.forecastQuality[group].primaryMetric }}</small>
+          </h4>
+          <div v-if="activity.forecastQuality[group].models.length > 0" class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>{{ t('forecastQuality.model') }}</th>
+                  <th>MAE</th>
+                  <th>MAPE</th>
+                  <th>SMAPE</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="model in activity.forecastQuality[group].models" :key="model.family">
+                  <td><strong>{{ model.family }}</strong></td>
+                  <td>{{ formatQualityValue(model.mae, 'mae', group === 'share') }}</td>
+                  <td>{{ formatQualityValue(model.mape, 'mape', group === 'share') }}</td>
+                  <td>{{ formatQualityValue(model.smape, 'smape', group === 'share') }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p v-else>{{ t('forecastQuality.noBacktest') }}</p>
+        </article>
+      </div>
+    </section>
   </section>
 </template>

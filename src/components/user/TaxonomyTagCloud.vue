@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-import LoadingTimer from '@/components/LoadingTimer.vue'
-import { userToolsApi } from '@/services/userToolsApi'
+import TaxonomyDropdown from '@/components/user/TaxonomyDropdown.vue'
 import type {
   TaxonomyGroupKey,
   TaxonomyTag,
   TaxonomyTagGroups,
   TaxonomyTagType,
 } from '@/types/userTools'
-import { formatInteger } from '@/utils/fieldAnalyticsFormatters'
 
 const props = defineProps<{
   groups: TaxonomyTagGroups
@@ -25,113 +24,38 @@ const emit = defineEmits<{
   remove: [type: TaxonomyTagType, id: number]
 }>()
 
+const { t } = useI18n()
 const type = ref<TaxonomyTagType>(props.defaultType ?? 'topic')
-const query = ref('')
-const options = ref<TaxonomyTag[]>([])
-const loadingOptions = ref(false)
-const optionsError = ref<string | null>(null)
-const dropdownOpen = ref(false)
-let searchRequestId = 0
-let searchDebounceId: ReturnType<typeof setTimeout> | null = null
+const hideEmptyAreas = ref(false)
 
-const allTypeOptions: Array<{ value: TaxonomyTagType; label: string; group: TaxonomyGroupKey }> = [
-  { value: 'domain', label: 'Домен', group: 'domains' },
-  { value: 'field', label: 'Область', group: 'fields' },
-  { value: 'subfield', label: 'Подобласть', group: 'subfields' },
-  { value: 'topic', label: 'Тема', group: 'topics' },
-]
-
-const groupLabels: Record<TaxonomyGroupKey, string> = {
-  domains: 'Домены',
-  fields: 'Области',
-  subfields: 'Подобласти',
-  topics: 'Темы',
-}
+const allTypeOptions = computed<Array<{ value: TaxonomyTagType; label: string; group: TaxonomyGroupKey }>>(() => [
+  { value: 'domain', label: t('taxonomy.domain'), group: 'domains' },
+  { value: 'field', label: t('taxonomy.field'), group: 'fields' },
+  { value: 'subfield', label: t('taxonomy.subfield'), group: 'subfields' },
+  { value: 'topic', label: t('taxonomy.topic'), group: 'topics' },
+])
+const groupLabels = computed<Record<TaxonomyGroupKey, string>>(() => ({
+  domains: t('taxonomy.groups.domains'),
+  fields: t('taxonomy.groups.fields'),
+  subfields: t('taxonomy.groups.subfields'),
+  topics: t('taxonomy.groups.topics'),
+}))
 
 const typeOptions = computed(() => {
-  const allowed = props.allowedTypes ?? allTypeOptions.map((item) => item.value)
+  const allowed = props.allowedTypes ?? allTypeOptions.value.map((item) => item.value)
 
-  return allTypeOptions.filter((item) => allowed.includes(item.value))
+  return allTypeOptions.value.filter((item) => allowed.includes(item.value))
 })
 
 const groupKeys = computed(() => Array.from(new Set(typeOptions.value.map((item) => item.group))))
 
 function groupForType(value: TaxonomyTagType): TaxonomyGroupKey {
-  return allTypeOptions.find((item) => item.value === value)?.group ?? 'topics'
-}
-
-async function searchOptions(): Promise<void> {
-  const cleanQuery = query.value.trim()
-  if (cleanQuery.length < 2) {
-    ++searchRequestId
-    options.value = []
-    optionsError.value = null
-    loadingOptions.value = false
-    dropdownOpen.value = false
-    return
-  }
-
-  const requestId = ++searchRequestId
-  loadingOptions.value = true
-  optionsError.value = null
-  dropdownOpen.value = true
-
-  try {
-    const response = await userToolsApi.trackedOptions(type.value, cleanQuery, 10)
-    if (requestId !== searchRequestId) {
-      return
-    }
-
-    const selectedIds = new Set(props.groups[groupForType(type.value)].map((item) => item.id))
-    options.value = response.items.filter((item) => !selectedIds.has(item.id))
-    dropdownOpen.value = true
-  } catch (error) {
-    if (requestId === searchRequestId) {
-      options.value = []
-      optionsError.value = error instanceof Error ? error.message : 'Не удалось загрузить варианты.'
-      dropdownOpen.value = false
-    }
-  } finally {
-    if (requestId === searchRequestId) {
-      loadingOptions.value = false
-    }
-  }
-}
-
-function scheduleSearch(delay = 300): void {
-  if (searchDebounceId !== null) {
-    clearTimeout(searchDebounceId)
-  }
-
-  searchDebounceId = setTimeout(() => {
-    void searchOptions()
-  }, delay)
+  return allTypeOptions.value.find((item) => item.value === value)?.group ?? 'topics'
 }
 
 function addOption(item: TaxonomyTag): void {
   emit('add', type.value, item)
-  query.value = ''
-  options.value = []
-  optionsError.value = null
-  dropdownOpen.value = false
-  ++searchRequestId
 }
-
-function closeDropdownSoon(): void {
-  setTimeout(() => {
-    dropdownOpen.value = false
-  }, 120)
-}
-
-function openDropdown(): void {
-  if (query.value.trim().length >= 2) {
-    dropdownOpen.value = true
-  }
-}
-
-watch([type, query], () => {
-  scheduleSearch()
-})
 
 watch(
   typeOptions,
@@ -144,20 +68,6 @@ watch(
   { immediate: true },
 )
 
-watch(
-  () => props.groups,
-  () => {
-    const selectedIds = new Set(props.groups[groupForType(type.value)].map((item) => item.id))
-    options.value = options.value.filter((item) => !selectedIds.has(item.id))
-  },
-  { deep: true },
-)
-
-onBeforeUnmount(() => {
-  if (searchDebounceId !== null) {
-    clearTimeout(searchDebounceId)
-  }
-})
 </script>
 
 <template>
@@ -167,9 +77,9 @@ onBeforeUnmount(() => {
       <p v-if="hint">{{ hint }}</p>
     </header>
 
-    <form class="tag-cloud-search" @submit.prevent="searchOptions">
+    <div class="tag-cloud-search">
       <label class="form-label">
-        Тип
+        {{ t('taxonomy.type') }}
         <select v-model="type" class="form-select" :disabled="busy">
           <option v-for="item in typeOptions" :key="item.value" :value="item.value">
             {{ item.label }}
@@ -178,42 +88,21 @@ onBeforeUnmount(() => {
       </label>
 
       <div class="form-label tag-cloud-search__query">
-        <span>Поиск</span>
-        <input
-          v-model="query"
-          class="form-control"
-          type="search"
-          placeholder="Название из базы данных"
+        <span>{{ t('common.search') }}</span>
+        <TaxonomyDropdown
+          :type="type"
+          :selected-ids="groups[groupForType(type)].map((item) => item.id)"
+          :hide-empty="hideEmptyAreas"
           :disabled="busy"
-          @focus="openDropdown"
-          @blur="closeDropdownSoon"
+          @select="addOption"
         />
-
-        <div v-if="dropdownOpen" class="tag-search-options" role="listbox" aria-label="Варианты тегов">
-          <button
-            v-for="item in options"
-            :key="`${item.type}:${item.id}`"
-            class="tag-search-option"
-            type="button"
-            :disabled="busy"
-            @click="addOption(item)"
-          >
-            <span>{{ item.name }}</span>
-            <strong>{{ formatInteger(item.papersCount ?? 0) }}</strong>
-          </button>
-          <LoadingTimer v-if="loadingOptions" label="Поиск вариантов..." compact />
-          <div v-else-if="options.length === 0" class="tag-search-options__empty">
-            {{ query.trim().length < 2 ? 'Введите минимум 2 символа' : 'Нет вариантов' }}
-          </div>
-        </div>
       </div>
 
-      <button class="btn btn-outline-primary" type="submit" :disabled="busy || loadingOptions">
-        {{ loadingOptions ? 'Поиск...' : 'Найти' }}
-      </button>
-    </form>
-
-    <div v-if="optionsError" class="alert alert-danger py-2 mb-0" role="alert">{{ optionsError }}</div>
+      <label class="analytics-filter-check tag-cloud-search__flag">
+        <input v-model="hideEmptyAreas" class="form-check-input" type="checkbox" />
+        <span>{{ t('common.hideEmptyAreas') }}</span>
+      </label>
+    </div>
 
     <div class="tag-cloud-groups">
       <div v-for="groupKey in groupKeys" :key="groupKey" class="tag-cloud-group">
@@ -221,12 +110,12 @@ onBeforeUnmount(() => {
         <div v-if="groups[groupKey].length > 0" class="tag-cloud-list">
           <span v-for="item in groups[groupKey]" :key="`${item.type}:${item.id}`" class="tag-pill">
             {{ item.name }}
-            <button type="button" :disabled="busy" :aria-label="`Удалить ${item.name}`" @click="emit('remove', item.type, item.id)">
+            <button type="button" :disabled="busy" :aria-label="t('common.remove', { name: item.name })" @click="emit('remove', item.type, item.id)">
               x
             </button>
           </span>
         </div>
-        <p v-else class="tag-cloud-empty">Не выбрано</p>
+        <p v-else class="tag-cloud-empty">{{ t('common.notSelected') }}</p>
       </div>
     </div>
   </section>
