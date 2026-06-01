@@ -64,6 +64,7 @@ watch(hideEmptyAreas, (enabled) => {
         <TaxonomyDropdown
           type="field"
           :selected-ids="value.fieldId === null ? [] : [value.fieldId]"
+          :selected-item="selectedField"
           :hide-empty="hideEmptyAreas"
           :disabled="loading"
           auto-select

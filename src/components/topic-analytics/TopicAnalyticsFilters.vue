@@ -101,6 +101,7 @@ watch(hideEmptyAreas, (enabled) => {
         <TaxonomyDropdown
           type="field"
           :selected-ids="selectedField === null ? [] : [selectedField.id]"
+          :selected-item="selectedField"
           :parents="fieldParents"
           :hide-empty="hideEmptyAreas"
           :disabled="loading"
@@ -114,6 +115,7 @@ watch(hideEmptyAreas, (enabled) => {
         <TaxonomyDropdown
           type="subfield"
           :selected-ids="selectedSubfield === null ? [] : [selectedSubfield.id]"
+          :selected-item="selectedSubfield"
           :parents="subfieldParents"
           :hide-empty="hideEmptyAreas"
           :disabled="loading || selectedField === null"
@@ -127,6 +129,7 @@ watch(hideEmptyAreas, (enabled) => {
         <TaxonomyDropdown
           type="topic"
           :selected-ids="selectedTopic === null ? [] : [selectedTopic.id]"
+          :selected-item="selectedTopic"
           :parents="topicParents"
           :hide-empty="hideEmptyAreas"
           :disabled="loading || selectedSubfield === null"
