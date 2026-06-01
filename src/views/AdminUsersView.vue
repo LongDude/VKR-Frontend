@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
+import LoadingTimer from '@/components/LoadingTimer.vue'
 import { technicalError } from '@/i18n'
 import { adminUsersApi } from '@/services/adminUsersApi'
 import { ApiError } from '@/services/apiClient'
@@ -306,9 +307,10 @@ onMounted(() => {
         <span class="badge text-bg-light border">{{ t('admin.users.total', { total: pagination.totalItems }) }}</span>
       </div>
 
-      <div v-if="loading" class="text-secondary">{{ t('admin.users.loading') }}</div>
-      <div v-else-if="users.length === 0" class="text-secondary">{{ t('admin.users.empty') }}</div>
-      <div v-else class="table-responsive">
+      <LoadingTimer v-if="loading && users.length === 0" :label="t('admin.users.loading')" />
+      <LoadingTimer v-else-if="loading" :label="t('admin.users.refreshing')" compact />
+      <div v-if="!loading && users.length === 0" class="text-secondary">{{ t('admin.users.empty') }}</div>
+      <div v-if="users.length > 0" class="table-responsive">
         <table class="table align-middle admin-users-table">
           <thead>
             <tr>
