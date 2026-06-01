@@ -21,7 +21,12 @@ const baseNavigation = [
 
 const navigation = computed(() => [
   ...baseNavigation,
-  ...(isAdmin.value ? [{ label: 'Панель управления', to: { name: 'admin-panel' } }] : []),
+  ...(isAdmin.value
+    ? [
+        { label: 'Панель управления', to: { name: 'admin-panel' } },
+        { label: 'Пользователи', to: { name: 'admin-users' } },
+      ]
+    : []),
 ])
 
 const userEmail = computed(() => user.value?.email ?? 'Активная сессия')

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteLocationNormalized, type Rout
 
 import MainLayout from '@/layouts/MainLayout.vue'
 import AdminPanelView from '@/views/AdminPanelView.vue'
+import AdminUsersView from '@/views/AdminUsersView.vue'
 import DirectionsView from '@/views/DirectionsView.vue'
 import FavoritesView from '@/views/FavoritesView.vue'
 import LoginView from '@/views/LoginView.vue'
@@ -88,6 +89,15 @@ const routes: RouteRecordRaw[] = [
         meta: {
           requiresAdmin: true,
           title: 'Панель управления',
+        },
+      },
+      {
+        path: 'admin/users',
+        name: 'admin-users',
+        component: AdminUsersView,
+        meta: {
+          requiresAdmin: true,
+          title: 'Пользователи',
         },
       },
     ],
