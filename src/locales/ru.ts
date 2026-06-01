@@ -303,6 +303,7 @@ export default {
       noPeriodData: 'Нет данных за выбранный период.',
       topicDynamics: 'Динамика тем',
       topicMap: 'Карта состояния научного направления',
+      resetTopicMapView: 'Сбросить положение',
       noComparableTopics: 'Нет тем с сопоставимыми данными за выбранный период.',
       subfield: 'Предметная область: {name}',
       papers12m: 'Публикации за 12 мес.: {value}',

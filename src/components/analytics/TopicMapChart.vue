@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EChartsOption } from 'echarts'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import EChartPanel from '@/components/analytics/EChartPanel.vue'
@@ -19,6 +19,7 @@ const props = defineProps<{
   points: TopicMapPoint[]
 }>()
 const { t } = useI18n()
+const chartPanel = ref<{ resetZoom: () => void } | null>(null)
 
 const statuses: TopicStatus[] = [
   'emerging',
@@ -42,6 +43,24 @@ const chartOption = computed<EChartsOption>(() => ({
     top: 0,
     type: 'scroll',
   },
+  dataZoom: [
+    {
+      type: 'inside',
+      xAxisIndex: 0,
+      filterMode: 'none',
+      moveOnMouseMove: true,
+      moveOnMouseWheel: 'shift',
+      zoomOnMouseWheel: true,
+    },
+    {
+      type: 'inside',
+      yAxisIndex: 0,
+      filterMode: 'none',
+      moveOnMouseMove: true,
+      moveOnMouseWheel: 'shift',
+      zoomOnMouseWheel: true,
+    },
+  ],
   tooltip: {
     borderWidth: 0,
     formatter: (params: unknown) => {
@@ -109,6 +128,10 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
 }
+
+function resetViewport(): void {
+  chartPanel.value?.resetZoom()
+}
 </script>
 
 <template>
@@ -118,9 +141,12 @@ function escapeHtml(value: string): string {
         <span class="section-eyebrow">{{ t('analytics.charts.topicDynamics') }}</span>
         <h2>{{ t('analytics.charts.topicMap') }}</h2>
       </div>
+      <button v-if="points.length > 0" class="btn btn-outline-primary" type="button" @click="resetViewport">
+        {{ t('analytics.charts.resetTopicMapView') }}
+      </button>
     </div>
 
-    <EChartPanel v-if="points.length > 0" :option="chartOption" height="440px" />
+    <EChartPanel v-if="points.length > 0" ref="chartPanel" :option="chartOption" height="440px" />
     <div v-else class="analytics-empty">{{ t('analytics.charts.noComparableTopics') }}</div>
   </section>
 </template>

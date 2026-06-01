@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { BarChart, LineChart, RadarChart, ScatterChart } from 'echarts/charts'
 import {
+  DataZoomComponent,
   GridComponent,
   LegendComponent,
   RadarComponent,
@@ -17,6 +18,7 @@ use([
   LineChart,
   RadarChart,
   ScatterChart,
+  DataZoomComponent,
   GridComponent,
   LegendComponent,
   RadarComponent,
@@ -48,6 +50,20 @@ function renderChart(): void {
 
   chart.setOption(props.option, true)
 }
+
+function resetZoom(): void {
+  chart?.dispatchAction({
+    type: 'dataZoom',
+    batch: [
+      { dataZoomIndex: 0, start: 0, end: 100 },
+      { dataZoomIndex: 1, start: 0, end: 100 },
+    ],
+  })
+}
+
+defineExpose({
+  resetZoom,
+})
 
 onMounted(() => {
   if (chartElement.value === null) {
