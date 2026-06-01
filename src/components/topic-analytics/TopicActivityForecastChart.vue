@@ -4,7 +4,12 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import EChartPanel from '@/components/analytics/EChartPanel.vue'
-import type { TopicActivity, TopicActivityPoint, TopicForecastPoint } from '@/types/topicAnalytics'
+import type {
+  ForecastQualityModel,
+  TopicActivity,
+  TopicActivityPoint,
+  TopicForecastPoint,
+} from '@/types/topicAnalytics'
 import {
   formatInteger,
   formatMonthLabel,
@@ -155,13 +160,21 @@ function formatTooltip(params: unknown): string {
   return [title, ...rows].join('<br />')
 }
 
-function formatQualityValue(value: number, metric: 'mae' | 'mape' | 'smape', share: boolean): string {
+function formatQualityValue(value: number | null, metric: 'mae' | 'mape' | 'smape', share: boolean): string {
+  if (value === null) {
+    return '—'
+  }
+
   if (metric === 'mae') {
     const formatted = decimalFormatter.format(share ? value * 100 : value)
     return share ? t('forecastQuality.percentagePoints', { value: formatted }) : formatted
   }
 
   return `${decimalFormatter.format(value)}%`
+}
+
+function hasBacktestMetrics(models: ForecastQualityModel[]): boolean {
+  return models.some((model) => model.mae !== null && model.mape !== null && model.smape !== null)
 }
 </script>
 
@@ -200,8 +213,17 @@ function formatQualityValue(value: number, metric: 'mae' | 'mape' | 'smape', sha
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="model in activity.forecastQuality[group].models" :key="model.family">
-                  <td><strong>{{ model.family }}</strong></td>
+                <tr
+                  v-for="model in activity.forecastQuality[group].models"
+                  :key="model.family"
+                  :class="{ 'forecast-quality__model--selected': model.selected }"
+                >
+                  <td>
+                    <strong>{{ model.family }}</strong>
+                    <small v-if="model.selected" class="forecast-quality__selected-label">
+                      {{ t('forecastQuality.usedModel') }}
+                    </small>
+                  </td>
                   <td>{{ formatQualityValue(model.mae, 'mae', group === 'share') }}</td>
                   <td>{{ formatQualityValue(model.mape, 'mape', group === 'share') }}</td>
                   <td>{{ formatQualityValue(model.smape, 'smape', group === 'share') }}</td>
@@ -209,7 +231,9 @@ function formatQualityValue(value: number, metric: 'mae' | 'mape' | 'smape', sha
               </tbody>
             </table>
           </div>
-          <p v-else>{{ t('forecastQuality.noBacktest') }}</p>
+          <p v-if="!hasBacktestMetrics(activity.forecastQuality[group].models)">
+            {{ t('forecastQuality.noBacktest') }}
+          </p>
         </article>
       </div>
     </section>

@@ -149,6 +149,19 @@
   padding: 0.85rem;
 }
 
+.forecast-quality__model--selected {
+  outline: 2px solid var(--sc-accent);
+  outline-offset: -2px;
+  background: #e7f4f1;
+}
+
+.forecast-quality__selected-label {
+  display: block;
+  color: var(--sc-accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
 .trend-decomposition__grid {
   display: grid;
   grid-template-columns: minmax(300px, 0.9fr) minmax(320px, 1.1fr);

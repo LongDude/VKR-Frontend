@@ -91,9 +91,10 @@ export interface TopicActivity {
 
 export interface ForecastQualityModel {
   family: string
-  mae: number
-  mape: number
-  smape: number
+  mae: number | null
+  mape: number | null
+  smape: number | null
+  selected: boolean
 }
 
 export interface ForecastQualityGroup {

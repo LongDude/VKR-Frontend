@@ -487,6 +487,7 @@ export default {
     activity: 'Количество публикаций',
     share: 'Доля темы',
     model: 'Модель',
+    usedModel: 'Используется для прогноза',
     noBacktest: 'Недостаточно данных для ретроспективной оценки моделей.',
     percentagePoints: '{value} п. п.',
   },
