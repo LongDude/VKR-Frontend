@@ -35,18 +35,18 @@ function coverageLabel(window: AnalyticsWindow): string {
     </article>
 
     <article class="analytics-kpi__card">
-      <span>{{ t('analytics.kpi.subfields') }}</span>
+      <span :title="t('analytics.tooltips.metrics.subfields')" :aria-label="t('analytics.tooltips.metrics.subfields')">{{ t('analytics.kpi.subfields') }}</span>
       <strong>{{ formatInteger(kpi.subfieldsCount) }}</strong>
     </article>
 
     <article class="analytics-kpi__card">
-      <span>{{ t('analytics.kpi.papers12m') }}</span>
+      <span :title="t('analytics.tooltips.metrics.papers12m')" :aria-label="t('analytics.tooltips.metrics.papers12m')">{{ t('analytics.kpi.papers12m') }}</span>
       <strong>{{ formatInteger(kpi.papersLast12m) }}</strong>
       <small>{{ windowLabel(kpi.papersLast12mWindow) }} · {{ t('analytics.kpi.coverage', { value: coverageLabel(kpi.papersLast12mWindow) }) }}</small>
     </article>
 
     <article class="analytics-kpi__card">
-      <span>
+      <span :title="t('analytics.tooltips.metrics.change')" :aria-label="t('analytics.tooltips.metrics.change')">
         {{ t('analytics.kpi.change', { months: kpi.comparisonWindowMonths }) }}
         {{ t('common.comparison', { current: windowLabel(kpi.comparisonCurrentWindow), previous: windowLabel(kpi.comparisonPreviousWindow) }) }}
       </span>
@@ -60,7 +60,7 @@ function coverageLabel(window: AnalyticsWindow): string {
     </article>
 
     <article class="analytics-kpi__card">
-      <span>{{ t('analytics.kpi.activeTopics') }}</span>
+      <span :title="t('analytics.tooltips.metrics.activeTopics')" :aria-label="t('analytics.tooltips.metrics.activeTopics')">{{ t('analytics.kpi.activeTopics') }}</span>
       <strong>{{ formatInteger(kpi.activeTopics) }}</strong>
       <small>{{ t('analytics.kpi.activeTopicsThreshold') }}</small>
     </article>

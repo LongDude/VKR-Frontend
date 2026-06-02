@@ -168,21 +168,21 @@ function buildActivityOption(
           <h3>{{ subfield.name }}</h3>
           <dl>
             <div>
-              <dt>12 {{ t('common.monthShort') }}</dt>
+              <dt :title="t('analytics.tooltips.metrics.papers12m')" :aria-label="t('analytics.tooltips.metrics.papers12m')">12 {{ t('common.monthShort') }}</dt>
               <dd>{{ formatInteger(subfield.papersLast12m) }}</dd>
             </div>
             <div>
-              <dt>{{ t('common.growth') }}</dt>
+              <dt :title="t('analytics.tooltips.metrics.growth')" :aria-label="t('analytics.tooltips.metrics.growth')">{{ t('common.growth') }}</dt>
               <dd :class="{ 'metric-negative': (subfield.yoyGrowth ?? 0) < 0 }">
                 {{ formatOptionalSignedPercent(subfield.yoyGrowth) }}
               </dd>
             </div>
             <div>
-              <dt>{{ t('common.share') }}</dt>
+              <dt :title="t('analytics.tooltips.metrics.shareInsideField')" :aria-label="t('analytics.tooltips.metrics.shareInsideField')">{{ t('common.share') }}</dt>
               <dd>{{ formatPercent(subfield.shareInsideField) }}</dd>
             </div>
             <div>
-              <dt>{{ t('common.coverage') }}</dt>
+              <dt :title="t('analytics.tooltips.metrics.coverage')" :aria-label="t('analytics.tooltips.metrics.coverage')">{{ t('common.coverage') }}</dt>
               <dd>{{ formatPercent(subfield.coverage) }}</dd>
             </div>
           </dl>

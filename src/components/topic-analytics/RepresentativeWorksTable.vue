@@ -98,7 +98,7 @@ function keywordLabels(item: RepresentativeWork): string[] {
             <dd>{{ formatInteger(item.citedBy) }}</dd>
           </div>
           <div>
-            <dt>{{ t('topicAnalytics.works.citationVelocity') }}</dt>
+            <dt :title="t('analytics.tooltips.metrics.citationVelocity')" :aria-label="t('analytics.tooltips.metrics.citationVelocity')">{{ t('topicAnalytics.works.citationVelocity') }}</dt>
             <dd>{{ formatOptionalDecimal(item.citationVelocity) }}</dd>
           </div>
           <div>

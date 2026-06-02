@@ -41,7 +41,7 @@ const { t } = useI18n()
     </article>
 
     <article class="analytics-kpi__card">
-      <span>{{ t('topicAnalytics.papers12m') }}</span>
+      <span :title="t('analytics.tooltips.metrics.papers12m')" :aria-label="t('analytics.tooltips.metrics.papers12m')">{{ t('topicAnalytics.papers12m') }}</span>
       <strong>{{ formatInteger(kpi.papersLast12m) }}</strong>
       <small>
         {{ kpi.papersLast12mWindow.start }} - {{ kpi.papersLast12mWindow.end }},
@@ -50,7 +50,7 @@ const { t } = useI18n()
     </article>
 
     <article class="analytics-kpi__card">
-      <span>{{ t('topicAnalytics.changePrevious', { months: filters.comparisonWindowMonths }) }}</span>
+      <span :title="t('analytics.tooltips.metrics.change')" :aria-label="t('analytics.tooltips.metrics.change')">{{ t('topicAnalytics.changePrevious', { months: filters.comparisonWindowMonths }) }}</span>
       <strong :class="{ 'metric-negative': (kpi.growth ?? 0) < 0 }">
         {{ formatOptionalSignedPercent(kpi.growth) }}
       </strong>
@@ -58,7 +58,7 @@ const { t } = useI18n()
     </article>
 
     <article class="analytics-kpi__card">
-      <span>{{ t('topicAnalytics.shareInsideSubfield') }}</span>
+      <span :title="t('analytics.tooltips.metrics.shareInsideSubfield')" :aria-label="t('analytics.tooltips.metrics.shareInsideSubfield')">{{ t('topicAnalytics.shareInsideSubfield') }}</span>
       <strong>{{ formatPercent(kpi.shareInsideSubfield) }}</strong>
       <small>{{ t('common.confidence') }} {{ formatPercent(kpi.confidence) }}</small>
     </article>

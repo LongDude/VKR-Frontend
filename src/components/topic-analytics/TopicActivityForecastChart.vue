@@ -207,9 +207,9 @@ function hasBacktestMetrics(models: ForecastQualityModel[]): boolean {
               <thead>
                 <tr>
                   <th>{{ t('forecastQuality.model') }}</th>
-                  <th>MAE</th>
-                  <th>MAPE</th>
-                  <th>SMAPE</th>
+                  <th :title="t('analytics.tooltips.metrics.mae')" :aria-label="t('analytics.tooltips.metrics.mae')">MAE</th>
+                  <th :title="t('analytics.tooltips.metrics.mape')" :aria-label="t('analytics.tooltips.metrics.mape')">MAPE</th>
+                  <th :title="t('analytics.tooltips.metrics.smape')" :aria-label="t('analytics.tooltips.metrics.smape')">SMAPE</th>
                 </tr>
               </thead>
               <tbody>

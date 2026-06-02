@@ -31,11 +31,15 @@ interface PanelState {
   error: string | null
   data: CoveragePanel | null
   requestId: number
+  selectionResetKey: number
 }
 
 const selectedTags = ref<TaxonomyTagGroups>({ domains: [], fields: [], subfields: [], topics: [] })
 const periodTo = ref(defaultMonth(0))
 const periodFrom = ref(defaultMonth(-35))
+const appliedTags = ref<TaxonomyTagGroups>({ domains: [], fields: [], subfields: [], topics: [] })
+const appliedPeriodTo = ref(periodTo.value)
+const appliedPeriodFrom = ref(periodFrom.value)
 const worker = ref<WorkerStatus | null>(null)
 const tasks = ref<CoverageTask[]>([])
 const workflows = ref<CoverageWorkflow[]>([])
@@ -45,7 +49,7 @@ const workflowBusy = ref(false)
 
 const panelStates = reactive(
   Object.fromEntries(
-    panelDefinitions.map((panel) => [panel.key, { loading: false, error: null, data: null, requestId: 0 }]),
+    panelDefinitions.map((panel) => [panel.key, { loading: false, error: null, data: null, requestId: 0, selectionResetKey: 0 }]),
   ) as Record<DataCoveragePanelKey, PanelState>,
 )
 const actionBusy = reactive(
@@ -58,9 +62,21 @@ const selectedTagIds = computed<SelectedTags>(() => ({
   subfields: selectedTags.value.subfields.map((item) => item.id),
   topics: selectedTags.value.topics.map((item) => item.id),
 }))
+const appliedSelectedTagIds = computed<SelectedTags>(() => ({
+  domains: appliedTags.value.domains.map((item) => item.id),
+  fields: appliedTags.value.fields.map((item) => item.id),
+  subfields: appliedTags.value.subfields.map((item) => item.id),
+  topics: appliedTags.value.topics.map((item) => item.id),
+}))
 const selectionSignature = computed(() => JSON.stringify(selectedTagIds.value))
-const hasSelectedTags = computed(() => Object.values(selectedTagIds.value).some((ids) => ids.length > 0))
-const canEnqueue = computed(() => worker.value?.canEnqueue === true && hasSelectedTags.value)
+const appliedSelectionSignature = computed(() => JSON.stringify(appliedSelectedTagIds.value))
+const filtersDirty = computed(() =>
+  selectionSignature.value !== appliedSelectionSignature.value
+  || periodFrom.value !== appliedPeriodFrom.value
+  || periodTo.value !== appliedPeriodTo.value,
+)
+const hasSelectedTags = computed(() => Object.values(appliedSelectedTagIds.value).some((ids) => ids.length > 0))
+const canEnqueue = computed(() => worker.value?.canEnqueue === true && hasSelectedTags.value && !filtersDirty.value)
 
 function defaultMonth(offset: number): string {
   const date = new Date()
@@ -71,6 +87,15 @@ function defaultMonth(offset: number): string {
 
 function groupForType(type: TaxonomyTagType): TaxonomyGroupKey {
   return `${type}s` as TaxonomyGroupKey
+}
+
+function cloneTagGroups(groups: TaxonomyTagGroups): TaxonomyTagGroups {
+  return {
+    domains: groups.domains.map((item) => ({ ...item })),
+    fields: groups.fields.map((item) => ({ ...item })),
+    subfields: groups.subfields.map((item) => ({ ...item })),
+    topics: groups.topics.map((item) => ({ ...item })),
+  }
 }
 
 function loadSavedFilters(): void {
@@ -119,22 +144,28 @@ function removeTag(type: TaxonomyTagType, id: number): void {
   saveFilters()
 }
 
-async function loadPanel(panelKey: DataCoveragePanelKey): Promise<void> {
+async function loadPanel(panelKey: DataCoveragePanelKey, fullReload = false): Promise<void> {
   const state = panelStates[panelKey]
+  if (!fullReload && state.loading) {
+    return
+  }
   const requestId = ++state.requestId
   state.loading = true
   state.error = null
+  if (fullReload) {
+    state.data = null
+    state.selectionResetKey += 1
+  }
   try {
     const data = await adminApi.loadCoveragePanel(panelKey, {
-      selectedTags: selectedTagIds.value,
-      periodFrom: periodFrom.value,
-      periodTo: periodTo.value,
+      selectedTags: appliedSelectedTagIds.value,
+      periodFrom: appliedPeriodFrom.value,
+      periodTo: appliedPeriodTo.value,
     })
     if (requestId === state.requestId) state.data = data
   } catch (error) {
     if (requestId === state.requestId) {
       state.error = technicalError(t('admin.panel.loadCoverageError'), error)
-      state.data = null
     }
   } finally {
     if (requestId === state.requestId) state.loading = false
@@ -142,8 +173,11 @@ async function loadPanel(panelKey: DataCoveragePanelKey): Promise<void> {
 }
 
 function loadAllPanels(): void {
+  appliedTags.value = cloneTagGroups(selectedTags.value)
+  appliedPeriodFrom.value = periodFrom.value
+  appliedPeriodTo.value = periodTo.value
   saveFilters()
-  panelDefinitions.forEach((panel) => void loadPanel(panel.key))
+  panelDefinitions.forEach((panel) => void loadPanel(panel.key, true))
 }
 
 function queuedPeriods(panelKey: DataCoveragePanelKey): string[] {
@@ -178,7 +212,7 @@ async function enqueuePanel(panelKey: DataCoveragePanelKey, from: string, to: st
   actionBusy[panelKey] = true
   orchestrationError.value = null
   try {
-    await adminApi.enqueuePanel(panelKey, { selectedTags: selectedTagIds.value, periodFrom: from, periodTo: to })
+    await adminApi.enqueuePanel(panelKey, { selectedTags: appliedSelectedTagIds.value, periodFrom: from, periodTo: to })
     await refreshTracking()
   } catch (error) {
     orchestrationError.value = technicalError(t('admin.panel.enqueueError'), error)
@@ -193,9 +227,9 @@ async function enqueueWorkflow(): Promise<void> {
   try {
     await adminApi.enqueueWorkflow({
       preset: workflowPreset.value,
-      selectedTags: selectedTagIds.value,
-      periodFrom: periodFrom.value,
-      periodTo: periodTo.value,
+      selectedTags: appliedSelectedTagIds.value,
+      periodFrom: appliedPeriodFrom.value,
+      periodTo: appliedPeriodTo.value,
     })
     await refreshTracking()
   } catch (error) {
@@ -218,7 +252,7 @@ onBeforeUnmount(() => {
 })
 
 watch([selectionSignature, periodFrom, periodTo], () => {
-  if (ready) loadAllPanels()
+  if (ready) saveFilters()
 })
 </script>
 
@@ -234,6 +268,7 @@ watch([selectionSignature, periodFrom, periodTo], () => {
       v-model:period-from="periodFrom"
       v-model:period-to="periodTo"
       :groups="selectedTags"
+      :dirty="filtersDirty"
       @add="addTag"
       @remove="removeTag"
       @refresh="loadAllPanels"
@@ -286,6 +321,7 @@ watch([selectionSignature, periodFrom, periodTo], () => {
       :queued-periods="queuedPeriods(panel.key)"
       :task-warnings="taskWarnings(panel.key)"
       :action-busy="actionBusy[panel.key]"
+      :selection-reset-key="panelStates[panel.key].selectionResetKey"
       @enqueue="enqueuePanel"
     />
   </section>

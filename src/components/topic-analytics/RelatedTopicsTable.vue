@@ -52,11 +52,11 @@ function formatTrendStatus(value: string | null): string {
         <thead>
           <tr>
             <th>{{ t('topicAnalytics.relatedHeaders.topic') }}</th>
-            <th>{{ t('topicAnalytics.relatedHeaders.relation') }}</th>
-            <th>{{ t('topicAnalytics.relatedHeaders.similarity') }}</th>
+            <th :title="t('analytics.tooltips.metrics.relation')" :aria-label="t('analytics.tooltips.metrics.relation')">{{ t('topicAnalytics.relatedHeaders.relation') }}</th>
+            <th :title="t('analytics.tooltips.metrics.similarity')" :aria-label="t('analytics.tooltips.metrics.similarity')">{{ t('topicAnalytics.relatedHeaders.similarity') }}</th>
             <th>{{ t('topicAnalytics.relatedHeaders.keyphrases') }}</th>
-            <th>{{ t('topicAnalytics.relatedHeaders.common') }}</th>
-            <th>{{ t('topicAnalytics.relatedHeaders.trend') }}</th>
+            <th :title="t('analytics.tooltips.metrics.commonPapers')" :aria-label="t('analytics.tooltips.metrics.commonPapers')">{{ t('topicAnalytics.relatedHeaders.common') }}</th>
+            <th :title="t('analytics.tooltips.metrics.status')" :aria-label="t('analytics.tooltips.metrics.status')">{{ t('topicAnalytics.relatedHeaders.trend') }}</th>
           </tr>
         </thead>
         <tbody>

@@ -81,6 +81,7 @@ const chartOption = computed<EChartsOption>(() => ({
         t('analytics.charts.confidence', { value: formatPercent(point.confidence) }),
         t('analytics.charts.coverage', { value: formatPercent(point.coverage) }),
         t('analytics.charts.status', { value: statusLabels[point.status] }),
+        t(`analytics.tooltips.topicStatuses.${point.status}`),
       ].join('<br />')
     },
   },

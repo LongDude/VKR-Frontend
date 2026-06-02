@@ -18,11 +18,11 @@ const { t } = useI18n()
 
 const activeMode = ref<RankingMode>('popular')
 
-const modes = computed<Array<{ key: RankingMode; label: string }>>(() => [
-  { key: 'popular', label: t('analytics.charts.statusModes.popular') },
-  { key: 'growing', label: t('analytics.charts.statusModes.growing') },
-  { key: 'emerging', label: t('analytics.charts.statusModes.emerging') },
-  { key: 'declining', label: t('analytics.charts.statusModes.declining') },
+const modes = computed<Array<{ key: RankingMode; label: string; tooltip: string }>>(() => [
+  { key: 'popular', label: t('analytics.charts.statusModes.popular'), tooltip: t('analytics.tooltips.rankingModes.popular') },
+  { key: 'growing', label: t('analytics.charts.statusModes.growing'), tooltip: t('analytics.tooltips.rankingModes.growing') },
+  { key: 'emerging', label: t('analytics.charts.statusModes.emerging'), tooltip: t('analytics.tooltips.rankingModes.emerging') },
+  { key: 'declining', label: t('analytics.charts.statusModes.declining'), tooltip: t('analytics.tooltips.rankingModes.declining') },
 ])
 
 const rows = computed(() => props.rankings[activeMode.value] ?? [])
@@ -70,6 +70,8 @@ function sortingMetricValue(row: (typeof rows.value)[number]): string {
           class="ranking-tabs__button"
           :class="{ active: activeMode === mode.key }"
           type="button"
+          :title="mode.tooltip"
+          :aria-label="`${mode.label}. ${mode.tooltip}`"
           @click="activeMode = mode.key"
         >
           {{ mode.label }}
@@ -83,15 +85,15 @@ function sortingMetricValue(row: (typeof rows.value)[number]): string {
           <tr>
             <th>{{ t('taxonomy.topic') }}</th>
             <th>{{ t('taxonomy.subfield') }}</th>
-            <th>{{ t('topicAnalytics.papers12m') }}</th>
-            <th>{{ t('topicAnalytics.shareInsideSubfield') }}</th>
-            <th>{{ t('analytics.charts.shareChangeLabel') }}</th>
-            <th>{{ t('common.growth') }}</th>
-            <th>{{ t('analytics.charts.burstScore') }}</th>
-            <th>{{ sortingMetricLabel }}</th>
-            <th>{{ t('common.confidence') }}</th>
-            <th>{{ t('common.coverage') }}</th>
-            <th>{{ t('common.status') }}</th>
+            <th :title="t('analytics.tooltips.metrics.papers12m')" :aria-label="t('analytics.tooltips.metrics.papers12m')">{{ t('topicAnalytics.papers12m') }}</th>
+            <th :title="t('analytics.tooltips.metrics.shareInsideSubfield')" :aria-label="t('analytics.tooltips.metrics.shareInsideSubfield')">{{ t('topicAnalytics.shareInsideSubfield') }}</th>
+            <th :title="t('analytics.tooltips.metrics.shareChange')" :aria-label="t('analytics.tooltips.metrics.shareChange')">{{ t('analytics.charts.shareChangeLabel') }}</th>
+            <th :title="t('analytics.tooltips.metrics.growth')" :aria-label="t('analytics.tooltips.metrics.growth')">{{ t('common.growth') }}</th>
+            <th :title="t('analytics.tooltips.metrics.burstScore')" :aria-label="t('analytics.tooltips.metrics.burstScore')">{{ t('analytics.charts.burstScore') }}</th>
+            <th :title="t('analytics.tooltips.metrics.rankingCriterion')" :aria-label="t('analytics.tooltips.metrics.rankingCriterion')">{{ sortingMetricLabel }}</th>
+            <th :title="t('analytics.tooltips.metrics.confidence')" :aria-label="t('analytics.tooltips.metrics.confidence')">{{ t('common.confidence') }}</th>
+            <th :title="t('analytics.tooltips.metrics.coverage')" :aria-label="t('analytics.tooltips.metrics.coverage')">{{ t('common.coverage') }}</th>
+            <th :title="t('analytics.tooltips.metrics.status')" :aria-label="t('analytics.tooltips.metrics.status')">{{ t('common.status') }}</th>
           </tr>
         </thead>
         <tbody>

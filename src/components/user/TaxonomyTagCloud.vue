@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import TaxonomyDropdown from '@/components/user/TaxonomyDropdown.vue'
+import TaxonomyHierarchyPicker from '@/components/user/TaxonomyHierarchyPicker.vue'
 import type {
   TaxonomyGroupKey,
   TaxonomyTag,
@@ -15,8 +15,6 @@ const props = defineProps<{
   busy?: boolean
   title?: string
   hint?: string
-  allowedTypes?: TaxonomyTagType[]
-  defaultType?: TaxonomyTagType
 }>()
 
 const emit = defineEmits<{
@@ -25,8 +23,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const type = ref<TaxonomyTagType>(props.defaultType ?? 'topic')
-const hideEmptyAreas = ref(false)
 
 const allTypeOptions = computed<Array<{ value: TaxonomyTagType; label: string; group: TaxonomyGroupKey }>>(() => [
   { value: 'domain', label: t('taxonomy.domain'), group: 'domains' },
@@ -41,33 +37,11 @@ const groupLabels = computed<Record<TaxonomyGroupKey, string>>(() => ({
   topics: t('taxonomy.groups.topics'),
 }))
 
-const typeOptions = computed(() => {
-  const allowed = props.allowedTypes ?? allTypeOptions.value.map((item) => item.value)
+const groupKeys = computed(() => allTypeOptions.value.map((item) => item.group))
 
-  return allTypeOptions.value.filter((item) => allowed.includes(item.value))
-})
-
-const groupKeys = computed(() => Array.from(new Set(typeOptions.value.map((item) => item.group))))
-
-function groupForType(value: TaxonomyTagType): TaxonomyGroupKey {
-  return allTypeOptions.value.find((item) => item.value === value)?.group ?? 'topics'
+function addOption(type: TaxonomyTagType, item: TaxonomyTag): void {
+  emit('add', type, item)
 }
-
-function addOption(item: TaxonomyTag): void {
-  emit('add', type.value, item)
-}
-
-watch(
-  typeOptions,
-  (items) => {
-    const firstType = items[0]?.value
-    if (firstType !== undefined && !items.some((item) => item.value === type.value)) {
-      type.value = firstType
-    }
-  },
-  { immediate: true },
-)
-
 </script>
 
 <template>
@@ -77,32 +51,7 @@ watch(
       <p v-if="hint">{{ hint }}</p>
     </header>
 
-    <div class="tag-cloud-search">
-      <label class="form-label">
-        {{ t('taxonomy.type') }}
-        <select v-model="type" class="form-select" :disabled="busy">
-          <option v-for="item in typeOptions" :key="item.value" :value="item.value">
-            {{ item.label }}
-          </option>
-        </select>
-      </label>
-
-      <div class="form-label tag-cloud-search__query">
-        <span>{{ t('common.search') }}</span>
-        <TaxonomyDropdown
-          :type="type"
-          :selected-ids="groups[groupForType(type)].map((item) => item.id)"
-          :hide-empty="hideEmptyAreas"
-          :disabled="busy"
-          @select="addOption"
-        />
-      </div>
-
-      <label class="analytics-filter-check tag-cloud-search__flag">
-        <input v-model="hideEmptyAreas" class="form-check-input" type="checkbox" />
-        <span>{{ t('common.hideEmptyAreas') }}</span>
-      </label>
-    </div>
+    <TaxonomyHierarchyPicker :busy="busy" @add="addOption" />
 
     <div class="tag-cloud-groups">
       <div v-for="groupKey in groupKeys" :key="groupKey" class="tag-cloud-group">

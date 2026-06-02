@@ -16,6 +16,7 @@ const props = defineProps<{
   queuedPeriods: string[]
   taskWarnings: string[]
   actionBusy: boolean
+  selectionResetKey: number
 }>()
 const { t } = useI18n()
 
@@ -67,7 +68,7 @@ const canEnqueue = computed(() =>
 )
 
 watch(
-  () => props.data,
+  () => props.selectionResetKey,
   () => {
     selectionStart.value = null
     selectionEnd.value = null
@@ -136,9 +137,11 @@ function enqueue(): void {
       </span>
     </div>
 
-    <LoadingTimer v-if="loading" :label="t('admin.coverage.loading')" />
-    <div v-else-if="error" class="alert alert-danger analytics-alert" role="alert">{{ error }}</div>
+    <LoadingTimer v-if="loading && !data" :label="t('admin.coverage.loading')" />
+    <div v-else-if="error && !data" class="alert alert-danger analytics-alert" role="alert">{{ error }}</div>
     <div v-else-if="data" class="admin-coverage-panel__body">
+      <LoadingTimer v-if="loading" :label="t('admin.coverage.loading')" compact />
+      <div v-if="error" class="alert alert-warning analytics-alert" role="alert">{{ error }}</div>
       <div v-if="taskWarnings.length > 0" class="alert alert-warning analytics-alert" role="alert">
         <div v-for="warning in taskWarnings" :key="warning">{{ warning }}</div>
       </div>

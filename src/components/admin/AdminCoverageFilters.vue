@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import TaxonomyDropdown from '@/components/user/TaxonomyDropdown.vue'
-import type { SelectedTags, TaxonomyGroupKey, TaxonomyTag, TaxonomyTagGroups, TaxonomyTagType } from '@/types/userTools'
+import TaxonomyHierarchyPicker from '@/components/user/TaxonomyHierarchyPicker.vue'
+import type { TaxonomyGroupKey, TaxonomyTag, TaxonomyTagGroups, TaxonomyTagType } from '@/types/userTools'
 
 const props = defineProps<{
   groups: TaxonomyTagGroups
   periodFrom: string
   periodTo: string
   busy?: boolean
+  dirty?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -21,7 +22,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const hideEmptyAreas = ref(false)
 const configs = computed<Array<{ type: TaxonomyTagType; group: TaxonomyGroupKey; label: string }>>(() => [
   { type: 'domain', group: 'domains', label: t('taxonomy.domain') },
   { type: 'field', group: 'fields', label: t('taxonomy.field') },
@@ -30,13 +30,8 @@ const configs = computed<Array<{ type: TaxonomyTagType; group: TaxonomyGroupKey;
 ])
 const hasSelections = computed(() => Object.values(props.groups).some((items) => items.length > 0))
 
-function selectedIds(): SelectedTags {
-  return {
-    domains: props.groups.domains.map((item) => item.id),
-    fields: props.groups.fields.map((item) => item.id),
-    subfields: props.groups.subfields.map((item) => item.id),
-    topics: props.groups.topics.map((item) => item.id),
-  }
+function addOption(type: TaxonomyTagType, item: TaxonomyTag): void {
+  emit('add', type, item)
 }
 </script>
 
@@ -47,24 +42,7 @@ function selectedIds(): SelectedTags {
       <p>{{ t('admin.filters.hint') }}</p>
     </header>
 
-    <div class="admin-taxonomy-searches">
-      <label v-for="config in configs" :key="config.type" class="form-label admin-taxonomy-search">
-        <span>{{ config.label }}</span>
-        <TaxonomyDropdown
-          :type="config.type"
-          :selected-ids="groups[config.group].map((item) => item.id)"
-          :parents="selectedIds()"
-          :hide-empty="hideEmptyAreas"
-          :disabled="busy"
-          @select="emit('add', config.type, $event)"
-        />
-      </label>
-    </div>
-
-    <label class="analytics-filter-check">
-      <input v-model="hideEmptyAreas" class="form-check-input" type="checkbox" />
-      <span>{{ t('common.hideEmptyAreas') }}</span>
-    </label>
+    <TaxonomyHierarchyPicker :busy="busy" @add="addOption" />
 
     <div v-if="hasSelections" class="tag-cloud-groups">
       <div v-for="config in configs" :key="`selected:${config.type}`" class="tag-cloud-group">
@@ -90,5 +68,6 @@ function selectedIds(): SelectedTags {
       </label>
       <button class="btn btn-outline-primary" type="button" :disabled="busy" @click="emit('refresh')">{{ t('common.update') }}</button>
     </div>
+    <div v-if="dirty" class="alert alert-info mb-0" role="status">{{ t('admin.filters.pendingChanges') }}</div>
   </section>
 </template>

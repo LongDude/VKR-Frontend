@@ -178,7 +178,7 @@ watch(hideEmptyAreas, (enabled) => {
       </div>
 
       <div>
-        <label class="form-label" for="topic-comparison-window">{{ t('analytics.comparisonWindow') }}</label>
+        <label class="form-label" for="topic-comparison-window" :title="t('analytics.tooltips.comparisonWindow')">{{ t('analytics.comparisonWindow') }}</label>
         <select
           id="topic-comparison-window"
           class="form-select"

@@ -16,6 +16,14 @@ const props = defineProps<{
   error?: string | null
 }>()
 const { t } = useI18n()
+const metricTooltipKeys: Record<string, string> = {
+  publication_growth: 'analytics.tooltips.decomposition.publication_growth',
+  share_growth: 'analytics.tooltips.decomposition.share_growth',
+  burst_score: 'analytics.tooltips.decomposition.burst_score',
+  citation_velocity: 'analytics.tooltips.decomposition.citation_velocity',
+  keyphrase_novelty: 'analytics.tooltips.decomposition.keyphrase_novelty',
+  semantic_drift: 'analytics.tooltips.decomposition.semantic_drift',
+}
 
 const rows = computed(() => props.items)
 const hasRadarValues = computed(() => props.items.some((item) => item.normalized !== null))
@@ -58,7 +66,7 @@ const option = computed<EChartsOption>(() => ({
       const rows = props.items.map((item) => {
         const label = metricLabels[item.key] ?? item.label
         const value = item.normalized === null ? t('common.notAvailable') : item.normalized.toFixed(2)
-        return `${label}: ${value}`
+        return `${label}: ${value}<br><small>${metricTooltip(item.key)}</small>`
       })
       return [`<strong>${t('topicAnalytics.trend.factors')}</strong>`, ...rows].join('<br>')
     },
@@ -86,6 +94,11 @@ const option = computed<EChartsOption>(() => ({
 function metricValue(key: string): number | null {
   return props.items.find((item) => item.key === key)?.value ?? null
 }
+
+function metricTooltip(key: string): string {
+  const tooltipKey = metricTooltipKeys[key]
+  return tooltipKey === undefined ? '' : t(tooltipKey)
+}
 </script>
 
 <template>
@@ -107,7 +120,13 @@ function metricValue(key: string): number | null {
       <div v-else class="analytics-empty">{{ t('topicAnalytics.trend.noFactors') }}</div>
 
       <div class="trend-metrics">
-        <div v-for="item in rows" :key="item.key" class="trend-metrics__row">
+        <div
+          v-for="item in rows"
+          :key="item.key"
+          class="trend-metrics__row"
+          :title="metricTooltip(item.key)"
+          :aria-label="`${metricLabels[item.key] ?? item.label}. ${metricTooltip(item.key)}`"
+        >
           <span>{{ metricLabels[item.key] ?? item.label }}</span>
           <strong>{{ formatMetricValue(item.value, item.unit) }}</strong>
           <em>{{ item.level ? levelLabels[item.level] : t('common.notAvailable') }}</em>

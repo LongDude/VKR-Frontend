@@ -5,22 +5,6 @@
   --coverage-queued: #b9d9f7;
 }
 
-.admin-taxonomy-searches {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.8rem;
-}
-
-.admin-taxonomy-search {
-  position: relative;
-  display: grid;
-  gap: 0.35rem;
-  margin: 0;
-  color: var(--sc-muted);
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
 .admin-period-form {
   display: flex;
   flex-wrap: wrap;
@@ -180,10 +164,6 @@
 }
 
 @media (max-width: 767.98px) {
-  .admin-taxonomy-searches {
-    grid-template-columns: 1fr;
-  }
-
   .admin-period-form,
   .admin-period-form .btn {
     width: 100%;

@@ -97,7 +97,7 @@ watch(hideEmptyAreas, (enabled) => {
       </div>
 
       <div>
-        <label class="form-label" for="comparison-window">{{ t('analytics.comparisonWindow') }}</label>
+        <label class="form-label" for="comparison-window" :title="t('analytics.tooltips.comparisonWindow')">{{ t('analytics.comparisonWindow') }}</label>
         <select
           id="comparison-window"
           class="form-select"
@@ -112,7 +112,7 @@ watch(hideEmptyAreas, (enabled) => {
       </div>
 
       <div>
-        <label class="form-label" for="moving-average">{{ t('analytics.movingAverage') }}</label>
+        <label class="form-label" for="moving-average" :title="t('analytics.tooltips.movingAverage')">{{ t('analytics.movingAverage') }}</label>
         <select
           id="moving-average"
           class="form-select"
