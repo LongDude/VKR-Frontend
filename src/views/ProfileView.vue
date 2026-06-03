@@ -19,13 +19,15 @@ const roleLabel = auth.roleLabel
 const editOpen = ref(false)
 const profileBusy = ref(false)
 const passwordBusy = ref(false)
-const trackedBusy = ref(false)
+const trackedLoading = ref(false)
+const trackedSyncing = ref(false)
 const profileMessage = ref<string | null>(null)
 const profileError = ref<string | null>(null)
 const passwordMessage = ref<string | null>(null)
 const passwordError = ref<string | null>(null)
 const trackedError = ref<string | null>(null)
 const trackedWarnings = ref<string[]>([])
+const trackedSyncingIds = ref<string[]>([])
 
 const editForm = reactive({
   name: '',
@@ -46,6 +48,36 @@ const tracked = ref<TaxonomyTagGroups>({
 })
 
 const hasTrackedTags = computed(() => Object.values(tracked.value).some((items) => items.length > 0))
+
+function groupForType(type: TaxonomyTagType): keyof TaxonomyTagGroups {
+  return `${type}s` as keyof TaxonomyTagGroups
+}
+
+function tagKey(type: TaxonomyTagType, id: number): string {
+  return `${type}:${id}`
+}
+
+function syncTracked(response: TaxonomyTagGroups & { warnings?: string[] }): void {
+  tracked.value = {
+    domains: response.domains,
+    fields: response.fields,
+    subfields: response.subfields,
+    topics: response.topics,
+  }
+  trackedWarnings.value = response.warnings ?? []
+}
+
+function pushSyncing(type: TaxonomyTagType, id: number): void {
+  const key = tagKey(type, id)
+  if (!trackedSyncingIds.value.includes(key)) {
+    trackedSyncingIds.value = [...trackedSyncingIds.value, key]
+  }
+}
+
+function popSyncing(type: TaxonomyTagType, id: number): void {
+  const key = tagKey(type, id)
+  trackedSyncingIds.value = trackedSyncingIds.value.filter((item) => item !== key)
+}
 
 function openEdit(): void {
   editForm.name = user.value?.name ?? ''
@@ -93,63 +125,77 @@ async function savePassword(): Promise<void> {
 }
 
 async function loadTracked(): Promise<void> {
-  trackedBusy.value = true
+  trackedLoading.value = true
   trackedError.value = null
 
   try {
     const response = await userToolsApi.tracked()
-    tracked.value = {
-      domains: response.domains,
-      fields: response.fields,
-      subfields: response.subfields,
-      topics: response.topics,
-    }
-    trackedWarnings.value = response.warnings ?? []
+    syncTracked(response)
   } catch (error) {
     trackedError.value = technicalError(t('profile.trackedLoadError'), error)
   } finally {
-    trackedBusy.value = false
+    trackedLoading.value = false
   }
 }
 
 async function addTracked(type: TaxonomyTagType, item: TaxonomyTag): Promise<void> {
-  trackedBusy.value = true
+  const group = groupForType(type)
+  if (tracked.value[group].some((tag) => tag.id === item.id)) {
+    return
+  }
+
+  tracked.value = {
+    ...tracked.value,
+    [group]: [{ ...item, type }, ...tracked.value[group]],
+  }
+  trackedSyncing.value = true
+  pushSyncing(type, item.id)
   trackedError.value = null
   trackedWarnings.value = []
 
   try {
     const response = await userToolsApi.addTracked(type, item.id)
-    tracked.value = {
-      domains: response.domains,
-      fields: response.fields,
-      subfields: response.subfields,
-      topics: response.topics,
-    }
-    trackedWarnings.value = response.warnings ?? []
+    syncTracked(response)
   } catch (error) {
+    tracked.value = {
+      ...tracked.value,
+      [group]: tracked.value[group].filter((tag) => tag.id !== item.id),
+    }
     trackedError.value = technicalError(t('profile.trackedAddError'), error)
   } finally {
-    trackedBusy.value = false
+    popSyncing(type, item.id)
+    trackedSyncing.value = trackedSyncingIds.value.length > 0
   }
 }
 
 async function removeTracked(type: TaxonomyTagType, id: number): Promise<void> {
-  trackedBusy.value = true
+  const group = groupForType(type)
+  const previousItems = tracked.value[group]
+  const removed = previousItems.find((tag) => tag.id === id)
+  if (removed === undefined) {
+    return
+  }
+
+  tracked.value = {
+    ...tracked.value,
+    [group]: previousItems.filter((tag) => tag.id !== id),
+  }
+  trackedSyncing.value = true
+  pushSyncing(type, id)
   trackedError.value = null
 
   try {
     const response = await userToolsApi.removeTracked(type, id)
-    tracked.value = {
-      domains: response.domains,
-      fields: response.fields,
-      subfields: response.subfields,
-      topics: response.topics,
-    }
-    trackedWarnings.value = response.warnings ?? []
+    syncTracked(response)
   } catch (error) {
+    tracked.value = {
+      ...tracked.value,
+      [group]: previousItems,
+    }
     trackedError.value = technicalError(t('profile.trackedRemoveError'), error)
   } finally {
-    trackedBusy.value = false
+    popSyncing(type, id)
+    trackedSyncing.value = trackedSyncingIds.value.length > 0
   }
 }
 
@@ -242,15 +288,16 @@ onMounted(() => {
     </section>
 
     <LoadingTimer
-      v-if="trackedBusy && !hasTrackedTags"
+      v-if="trackedLoading && !hasTrackedTags"
       :label="t('profile.trackedLoading')"
     />
-    <LoadingTimer v-else-if="trackedBusy" :label="t('profile.trackedRefreshing')" compact />
+    <LoadingTimer v-else-if="trackedSyncing" :label="t('profile.trackedRefreshing')" compact />
 
     <TaxonomyTagCloud
-      v-if="!trackedBusy || hasTrackedTags"
+      v-if="!trackedLoading || hasTrackedTags"
       :groups="tracked"
-      :busy="trackedBusy"
+      :busy="trackedLoading"
+      :syncing-ids="trackedSyncingIds"
       :title="t('profile.trackedTitle')"
       :hint="t('profile.trackedHint')"
       @add="addTracked"

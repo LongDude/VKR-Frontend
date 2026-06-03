@@ -13,6 +13,7 @@ import type {
 const props = defineProps<{
   groups: TaxonomyTagGroups
   busy?: boolean
+  syncingIds?: string[]
   title?: string
   hint?: string
 }>()
@@ -42,6 +43,14 @@ const groupKeys = computed(() => allTypeOptions.value.map((item) => item.group))
 function addOption(type: TaxonomyTagType, item: TaxonomyTag): void {
   emit('add', type, item)
 }
+
+function tagKey(item: TaxonomyTag): string {
+  return `${item.type}:${item.id}`
+}
+
+function isSyncing(item: TaxonomyTag): boolean {
+  return props.syncingIds?.includes(tagKey(item)) === true
+}
 </script>
 
 <template>
@@ -59,7 +68,12 @@ function addOption(type: TaxonomyTagType, item: TaxonomyTag): void {
         <div v-if="groups[groupKey].length > 0" class="tag-cloud-list">
           <span v-for="item in groups[groupKey]" :key="`${item.type}:${item.id}`" class="tag-pill">
             {{ item.name }}
-            <button type="button" :disabled="busy" :aria-label="t('common.remove', { name: item.name })" @click="emit('remove', item.type, item.id)">
+            <button
+              type="button"
+              :disabled="busy || isSyncing(item)"
+              :aria-label="t('common.remove', { name: item.name })"
+              @click="emit('remove', item.type, item.id)"
+            >
               x
             </button>
           </span>
