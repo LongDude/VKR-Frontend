@@ -402,7 +402,7 @@ export default {
     papers12m: 'Публикации за 12 мес.',
     changePrevious: 'Изменение к предыдущим {months} мес.',
     window: '{period} · окно {months} мес.',
-    shareInsideSubfield: 'Доля внутри предметной области',
+    shareInsideSubfield: 'Доля внутри пр. области',
     trend: {
       title: 'Декомпозиция тренда',
       explanation: 'Объяснение изменения тренда',

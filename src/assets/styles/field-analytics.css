@@ -248,6 +248,19 @@
   white-space: nowrap;
 }
 
+.topic-ranking-table thead th {
+  white-space: normal;
+}
+
+.topic-ranking-table__head-label {
+  display: -webkit-box;
+  max-width: 8.5rem;
+  overflow: hidden;
+  line-height: 1.15;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .analytics-table tbody td {
   color: var(--sc-text);
   font-size: 0.9rem;

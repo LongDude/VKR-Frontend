@@ -80,20 +80,77 @@ function sortingMetricValue(row: (typeof rows.value)[number]): string {
     </div>
 
     <div class="table-responsive analytics-table-wrap">
-      <table class="table analytics-table align-middle">
+      <table class="table analytics-table topic-ranking-table align-middle">
         <thead>
           <tr>
-            <th>{{ t('taxonomy.topic') }}</th>
-            <th>{{ t('taxonomy.subfield') }}</th>
-            <th :title="t('analytics.tooltips.metrics.papers12m')" :aria-label="t('analytics.tooltips.metrics.papers12m')">{{ t('topicAnalytics.papers12m') }}</th>
-            <th :title="t('analytics.tooltips.metrics.shareInsideSubfield')" :aria-label="t('analytics.tooltips.metrics.shareInsideSubfield')">{{ t('topicAnalytics.shareInsideSubfield') }}</th>
-            <th :title="t('analytics.tooltips.metrics.shareChange')" :aria-label="t('analytics.tooltips.metrics.shareChange')">{{ t('analytics.charts.shareChangeLabel') }}</th>
-            <th :title="t('analytics.tooltips.metrics.growth')" :aria-label="t('analytics.tooltips.metrics.growth')">{{ t('common.growth') }}</th>
-            <th :title="t('analytics.tooltips.metrics.burstScore')" :aria-label="t('analytics.tooltips.metrics.burstScore')">{{ t('analytics.charts.burstScore') }}</th>
-            <th :title="t('analytics.tooltips.metrics.rankingCriterion')" :aria-label="t('analytics.tooltips.metrics.rankingCriterion')">{{ sortingMetricLabel }}</th>
-            <th :title="t('analytics.tooltips.metrics.confidence')" :aria-label="t('analytics.tooltips.metrics.confidence')">{{ t('common.confidence') }}</th>
-            <th :title="t('analytics.tooltips.metrics.coverage')" :aria-label="t('analytics.tooltips.metrics.coverage')">{{ t('common.coverage') }}</th>
-            <th :title="t('analytics.tooltips.metrics.status')" :aria-label="t('analytics.tooltips.metrics.status')">{{ t('common.status') }}</th>
+            <th>
+              <span class="topic-ranking-table__head-label">{{ t('taxonomy.topic') }}</span>
+            </th>
+            <th>
+              <span class="topic-ranking-table__head-label">{{ t('taxonomy.subfield') }}</span>
+            </th>
+            <th
+              :title="t('analytics.tooltips.metrics.papers12m')"
+              :aria-label="t('analytics.tooltips.metrics.papers12m')"
+            >
+              <span class="topic-ranking-table__head-label">{{
+                t('topicAnalytics.papers12m')
+              }}</span>
+            </th>
+            <th
+              :title="t('analytics.tooltips.metrics.shareInsideSubfield')"
+              :aria-label="t('analytics.tooltips.metrics.shareInsideSubfield')"
+            >
+              <span class="topic-ranking-table__head-label">{{
+                t('topicAnalytics.shareInsideSubfield')
+              }}</span>
+            </th>
+            <th
+              :title="t('analytics.tooltips.metrics.shareChange')"
+              :aria-label="t('analytics.tooltips.metrics.shareChange')"
+            >
+              <span class="topic-ranking-table__head-label">{{
+                t('analytics.charts.shareChangeLabel')
+              }}</span>
+            </th>
+            <th
+              :title="t('analytics.tooltips.metrics.growth')"
+              :aria-label="t('analytics.tooltips.metrics.growth')"
+            >
+              <span class="topic-ranking-table__head-label">{{ t('common.growth') }}</span>
+            </th>
+            <th
+              :title="t('analytics.tooltips.metrics.burstScore')"
+              :aria-label="t('analytics.tooltips.metrics.burstScore')"
+            >
+              <span class="topic-ranking-table__head-label">{{
+                t('analytics.charts.burstScore')
+              }}</span>
+            </th>
+            <th
+              :title="t('analytics.tooltips.metrics.rankingCriterion')"
+              :aria-label="t('analytics.tooltips.metrics.rankingCriterion')"
+            >
+              <span class="topic-ranking-table__head-label">{{ sortingMetricLabel }}</span>
+            </th>
+            <th
+              :title="t('analytics.tooltips.metrics.confidence')"
+              :aria-label="t('analytics.tooltips.metrics.confidence')"
+            >
+              <span class="topic-ranking-table__head-label">{{ t('common.confidence') }}</span>
+            </th>
+            <th
+              :title="t('analytics.tooltips.metrics.coverage')"
+              :aria-label="t('analytics.tooltips.metrics.coverage')"
+            >
+              <span class="topic-ranking-table__head-label">{{ t('common.coverage') }}</span>
+            </th>
+            <th
+              :title="t('analytics.tooltips.metrics.status')"
+              :aria-label="t('analytics.tooltips.metrics.status')"
+            >
+              <span class="topic-ranking-table__head-label">{{ t('common.status') }}</span>
+            </th>
           </tr>
         </thead>
         <tbody>
