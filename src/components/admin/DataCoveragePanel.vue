@@ -63,7 +63,6 @@ const requestSummary = computed(() => {
 const canEnqueue = computed(() =>
   props.workerAvailable &&
   selectionStart.value !== null &&
-  selectionEnd.value !== null &&
   !props.actionBusy,
 )
 const hasSelection = computed(() => selectionStart.value !== null)
@@ -72,7 +71,10 @@ const selectionSummary = computed(() => {
     return t('admin.coverage.selectionHint')
   }
   if (selectionEnd.value === null) {
-    return t('admin.coverage.selectionStart', { period: selectionStart.value })
+    return t('admin.coverage.selectionRange', {
+      from: selectionStart.value,
+      to: selectionStart.value,
+    })
   }
 
   const periods = [selectionStart.value, selectionEnd.value].sort()
@@ -136,7 +138,7 @@ function monthBoundary(period: string, end: boolean): string {
 }
 
 function enqueue(): void {
-  if (!canEnqueue.value || selectionStart.value === null || selectionEnd.value === null) {
+  if (!canEnqueue.value || selectionStart.value === null) {
     return
   }
   const periods = [...selected.value].sort()

@@ -213,6 +213,7 @@ async function enqueuePanel(panelKey: DataCoveragePanelKey, from: string, to: st
   orchestrationError.value = null
   try {
     await adminApi.enqueuePanel(panelKey, { selectedTags: appliedSelectedTagIds.value, periodFrom: from, periodTo: to })
+    panelStates[panelKey].selectionResetKey += 1
     await refreshTracking()
   } catch (error) {
     orchestrationError.value = technicalError(t('admin.panel.enqueueError'), error)
