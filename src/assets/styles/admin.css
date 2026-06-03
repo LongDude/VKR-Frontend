@@ -93,8 +93,26 @@
 }
 
 .admin-coverage-cell--selected {
-  outline: 3px solid rgba(19, 111, 99, 0.32);
+  border-color: #0f5f56;
+  background: #136f63;
+  color: #ffffff;
+  outline: 3px solid rgba(19, 111, 99, 0.42);
   outline-offset: 1px;
+  box-shadow: 0 0 0 2px #ffffff inset;
+}
+
+.admin-coverage-cell--selected:hover,
+.admin-coverage-cell--selected:focus,
+.admin-coverage-cell--selected:focus-visible {
+  border-color: #0b4f48;
+  background: #0f5f56;
+  color: #ffffff;
+  outline: 4px solid rgba(19, 111, 99, 0.5);
+}
+
+.admin-coverage-cell--selection-boundary {
+  border-color: #083f3a;
+  box-shadow: 0 0 0 3px #ffffff inset, 0 0 0 2px #083f3a;
 }
 
 .admin-coverage-actions {
@@ -106,6 +124,23 @@
   color: var(--sc-muted);
   font-size: 0.9rem;
   font-weight: 800;
+}
+
+.admin-coverage-actions > div,
+.admin-coverage-selection-summary {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.admin-coverage-selection-summary {
+  color: var(--sc-text);
+  font-size: 0.8rem;
+}
+
+.admin-coverage-actions__buttons {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
 .admin-workflow-form {

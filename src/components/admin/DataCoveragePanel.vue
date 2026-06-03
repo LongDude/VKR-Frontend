@@ -66,6 +66,21 @@ const canEnqueue = computed(() =>
   selectionEnd.value !== null &&
   !props.actionBusy,
 )
+const hasSelection = computed(() => selectionStart.value !== null)
+const selectionSummary = computed(() => {
+  if (selectionStart.value === null) {
+    return t('admin.coverage.selectionHint')
+  }
+  if (selectionEnd.value === null) {
+    return t('admin.coverage.selectionStart', { period: selectionStart.value })
+  }
+
+  const periods = [selectionStart.value, selectionEnd.value].sort()
+  return t('admin.coverage.selectionRange', {
+    from: periods[0],
+    to: periods[periods.length - 1],
+  })
+})
 
 watch(
   () => props.selectionResetKey,
@@ -93,12 +108,21 @@ function cellTitle(cell: DataCoverageCell): string {
 }
 
 function selectCell(cell: DataCoverageCell): void {
+  if (selected.value.has(cell.period)) {
+    clearSelection()
+    return
+  }
   if (selectionStart.value === null || selectionEnd.value !== null) {
     selectionStart.value = cell.period
     selectionEnd.value = null
     return
   }
   selectionEnd.value = cell.period
+}
+
+function clearSelection(): void {
+  selectionStart.value = null
+  selectionEnd.value = null
 }
 
 function monthBoundary(period: string, end: boolean): string {
@@ -165,10 +189,14 @@ function enqueue(): void {
                     {
                       'admin-coverage-cell--queued': queued.has(cellFor(year, row.key)!.period),
                       'admin-coverage-cell--selected': selected.has(cellFor(year, row.key)!.period),
+                      'admin-coverage-cell--selection-boundary':
+                        selectionStart === cellFor(year, row.key)!.period ||
+                        selectionEnd === cellFor(year, row.key)!.period,
                     },
                   ]"
                   type="button"
                   :title="cellTitle(cellFor(year, row.key)!)"
+                  :aria-pressed="selected.has(cellFor(year, row.key)!.period)"
                   @click="selectCell(cellFor(year, row.key)!)"
                 >
                   {{ cellFor(year, row.key)?.actual }}/{{ cellFor(year, row.key)?.expected }}
@@ -181,10 +209,18 @@ function enqueue(): void {
       </div>
 
       <div class="admin-coverage-actions">
-        <span>{{ requestSummary }}</span>
-        <button class="btn btn-primary" type="button" :disabled="!canEnqueue" @click="enqueue">
-          {{ actionBusy ? t('admin.coverage.enqueuing') : t('admin.coverage.enqueue') }}
-        </button>
+        <div>
+          <span>{{ requestSummary }}</span>
+          <small class="admin-coverage-selection-summary">{{ selectionSummary }}</small>
+        </div>
+        <div class="admin-coverage-actions__buttons">
+          <button v-if="hasSelection" class="btn btn-outline-secondary" type="button" :disabled="actionBusy" @click="clearSelection">
+            {{ t('admin.coverage.clearSelection') }}
+          </button>
+          <button class="btn btn-primary" type="button" :disabled="!canEnqueue" @click="enqueue">
+            {{ actionBusy ? t('admin.coverage.enqueuing') : t('admin.coverage.enqueue') }}
+          </button>
+        </div>
       </div>
     </div>
     <div v-else class="analytics-empty">
