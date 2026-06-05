@@ -574,7 +574,7 @@ export default {
     links: 'Ссылки',
   },
   errors: {
-    context: '{message} Техническая информация: {details}',
+    context: '{message}: {details}',
     request: 'Ошибка запроса',
   },
 } as const
